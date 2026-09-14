@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Playspace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root {
+    --bg: #EDEAE1;
+    --surface: #FFFFFF;
+    --ink: #23241F;
+    --ink-soft: #635F54;
+    --accent: #B4762A;
+    --accent-ink: #FFFFFF;
+    --border: rgba(35,36,31,0.14);
+    --shadow: rgba(35,36,31,0.16);
+
+    --font-display: "Instrument Serif", ui-serif, Georgia, serif;
+    --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1C1B17;
+      --surface: #26241E;
+      --ink: #EEEAE0;
+      --ink-soft: #A6A092;
+      --accent: #E0A34E;
+      --accent-ink: #1C1B17;
+      --border: rgba(238,234,224,0.14);
+      --shadow: rgba(0,0,0,0.45);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1C1B17;
+    --surface: #26241E;
+    --ink: #EEEAE0;
+    --ink-soft: #A6A092;
+    --accent: #E0A34E;
+    --accent-ink: #1C1B17;
+    --border: rgba(238,234,224,0.14);
+    --shadow: rgba(0,0,0,0.45);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink); font-family: var(--font-body);
+    min-height: 100vh;
+  }
+
+  .wrap { max-width: 760px; margin: 0 auto; padding: 64px 24px 60px; }
+
+  header { margin-bottom: 44px; }
+  h1 {
+    font-family: var(--font-display); font-style: italic; font-weight: 400;
+    font-size: 56px; margin: 0 0 10px; letter-spacing: 0.2px; text-wrap: balance;
+  }
+  header p { margin: 0; color: var(--ink-soft); font-size: 15.5px; max-width: 46ch; line-height: 1.55; }
+
+  .games { display: flex; flex-direction: column; gap: 14px; }
+
+  .game-card {
+    display: flex; align-items: center; gap: 18px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 20px 22px; text-decoration: none; color: inherit;
+    box-shadow: 0 1px 2px var(--shadow);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .game-card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px var(--shadow); }
+  .game-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .game-icon {
+    flex: 0 0 auto; width: 52px; height: 52px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; background: var(--bg);
+  }
+  .game-body { flex: 1 1 auto; min-width: 0; }
+  .game-name {
+    font-family: var(--font-display); font-style: italic; font-size: 24px;
+    margin: 0 0 4px; color: var(--ink);
+  }
+  .game-desc { margin: 0; font-size: 13.5px; color: var(--ink-soft); line-height: 1.5; }
+  .game-meta {
+    flex: 0 0 auto; font-family: var(--font-mono); font-size: 11px;
+    color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.06em;
+    text-align: right; line-height: 1.6;
+  }
+
+  footer { margin-top: 48px; font-size: 12.5px; color: var(--ink-soft); }
+  footer a { color: inherit; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Playspace</h1>
+      <p>A couple of small browser games, built one conversation at a time. Pick one below.</p>
+    </header>
+
+    <div class="games">
+      <a class="game-card" href="skyscraper-farm/skyscraper-farm.html">
+        <span class="game-icon">🏙️</span>
+        <span class="game-body">
+          <span class="game-name">Skyscraper Farm</span>
+          <span class="game-desc">Sort nine towers of hidden animals into matching stacks, using as few moving crates as you can.</span>
+        </span>
+        <span class="game-meta">Sorting<br>puzzle</span>
+      </a>
+
+      <a class="game-card" href="minesweeper/minesweeper.html">
+        <span class="game-icon">💣</span>
+        <span class="game-body">
+          <span class="game-name">Minesweeper</span>
+          <span class="game-desc">The classic — clear every safe square without waking a mine. Small, Medium, or Big.</span>
+        </span>
+        <span class="game-meta">Small · Medium<br>Big</span>
+      </a>
+    </div>
+
+    <footer>Source on <a href="https://github.com/abroom/playspace">GitHub</a>.</footer>
+  </div>
+</body>
+</html>

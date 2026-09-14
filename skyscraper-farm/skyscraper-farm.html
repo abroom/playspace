@@ -84,6 +84,11 @@
     padding-bottom: 14px; margin-bottom: 18px;
     border-bottom: 1px solid var(--border);
   }
+  .back-link {
+    display: inline-block; font-size: 12.5px; font-weight: 600;
+    color: var(--ink-soft); text-decoration: none; margin-bottom: 8px;
+  }
+  .back-link:hover { color: var(--ink); text-decoration: underline; }
   .title-block h1 {
     font-family: var(--font-display); font-weight: 700; font-size: 28px;
     margin: 0 0 12px; letter-spacing: 0.2px; text-wrap: balance;
@@ -268,6 +273,7 @@
 <div class="wrap">
   <header>
     <div class="title-block">
+      <a class="back-link" href="../index.html">← Playspace</a>
       <h1>Skyscraper Farm</h1>
       <div class="controls">
         <button id="btn-newgame">New farm</button>

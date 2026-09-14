@@ -75,6 +75,12 @@
   .wrap { max-width: 900px; margin: 0 auto; padding: 22px 18px 40px; }
 
   header { padding-bottom: 14px; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
+  .back-link {
+    display: inline-block; font-size: 12.5px; font-weight: 600;
+    color: var(--ink-soft); text-decoration: none; margin-bottom: 8px;
+    font-family: var(--font-body);
+  }
+  .back-link:hover { color: var(--ink); text-decoration: underline; }
   h1 {
     font-family: var(--font-display); font-size: 20px; font-weight: 400;
     margin: 0 0 6px; letter-spacing: 0.5px; text-wrap: balance; line-height: 1.4;
@@ -177,6 +183,7 @@
 
 <div class="wrap">
   <header>
+    <a class="back-link" href="../index.html">← Playspace</a>
     <h1>MINESWEEPER</h1>
     <p>Clear every safe square without waking a mine.</p>
     <div class="controls">
