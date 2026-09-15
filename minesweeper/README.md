@@ -61,6 +61,20 @@ square you flagged that *wasn't* a mine shows yellow (`.false-flag`) instead
 of just blending in as a normal hidden flag. Everything else unflagged just
 shows the plain 💣 styling.
 
+## Hint and Continue
+
+- **Hint** reveals a random hidden, unflagged, non-mine square for you —
+  before mines are placed, any hidden square qualifies, since `reveal()`
+  guarantees the first click is always safe. Disabled once the game is won
+  or lost.
+- **Continue** appears on the loss banner: it turns the mine you hit into a
+  flag (undoing its `.exploded` state) and un-reveals every other mine that
+  `loseGame()` force-revealed for the death screen, putting the board back
+  to exactly how it looked the instant before you hit it, then resumes the
+  timer and play. You can hit another mine later and continue again.
+- Both are tallied per game (`hintsUsed`, `continuesUsed`) and shown on
+  whichever banner appears — reset on **New game**/restart.
+
 ## Known intentional non-features
 
 - No chording (clicking a satisfied number to auto-reveal its remaining

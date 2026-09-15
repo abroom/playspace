@@ -112,6 +112,8 @@
   button:active { box-shadow: inset -1px -1px 0 var(--bevel-light), inset 1px 1px 0 var(--bevel-dark); }
   button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   button.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+  button:disabled { opacity: 0.5; cursor: default; filter: none; box-shadow: none; }
+  button:disabled:active { box-shadow: none; }
 
   .status-group { display: flex; align-items: center; gap: 10px; margin-left: auto; }
   .lcd {
@@ -167,6 +169,11 @@
   }
   .banner.win { color: var(--n2); }
   .banner.lose { color: var(--mine-bg); }
+  .banner-continue { display: block; margin: 10px auto 0; }
+  .banner-stats {
+    margin-top: 8px; font-family: var(--font-body); font-weight: 600;
+    font-size: 11.5px; color: var(--ink-soft);
+  }
 
   .legend {
     margin-top: 16px; font-size: 12.5px; color: var(--ink-soft); display: flex; gap: 8px; align-items: center;
@@ -255,6 +262,7 @@
     <div class="controls">
       <button id="btn-newgame" class="primary">New game</button>
       <button id="btn-help">How to play</button>
+      <button id="btn-hint">Hint</button>
       <div class="status-group">
         <span class="lcd" id="mine-count">010</span>
         <button class="face-btn" id="btn-face" aria-label="Restart (same size)" title="Restart (same size)">🙂</button>
@@ -267,8 +275,15 @@
     <div class="board" id="board" role="group" aria-label="Minefield"></div>
   </div>
 
-  <div class="banner win" id="win-banner" hidden>Field cleared! Nothing left but empty ground.</div>
-  <div class="banner lose" id="lose-banner" hidden>Boom. That was a mine.</div>
+  <div class="banner win" id="win-banner" hidden>
+    Field cleared! Nothing left but empty ground.
+    <div class="banner-stats" id="win-stats"></div>
+  </div>
+  <div class="banner lose" id="lose-banner" hidden>
+    Boom. That was a mine.
+    <button id="btn-continue" class="primary banner-continue">Continue (flag this mine and keep playing)</button>
+    <div class="banner-stats" id="lose-stats"></div>
+  </div>
 
   <p class="legend">🚩 flagged &nbsp;·&nbsp; ❓ unsure &nbsp;·&nbsp; numbers show mines touching that square</p>
 
@@ -280,6 +295,8 @@
         <li>Reveal a mine and it's game over: the one you hit turns red, mines you'd flagged correctly turn green, and flags you got wrong turn yellow.</li>
         <li>Right-click a hidden square to cycle it: blank → 🚩 flagged → ❓ unsure → blank.</li>
         <li>Clear every square that isn't a mine to win.</li>
+        <li><strong>Hint</strong> reveals a random safe square for you. It's disabled once the game is over. Hints used are tallied and shown when the game ends.</li>
+        <li>Hit a mine and you can <strong>Continue</strong>: it turns that mine into a flag and lets you keep playing. Continues used are tallied too.</li>
         <li>Keyboard: arrows or WASD move the cursor, <strong>Space</strong> reveals, <strong>F</strong> cycles flag/unsure, <strong>R</strong> restarts the same size.</li>
         <li>The smiley restarts the same size too. The <strong>New game</strong> button lets you pick a different one. <strong>Escape</strong> opens the size picker if nothing's open, or closes whatever's open. In that dialog, <strong>1</strong>/<strong>2</strong>/<strong>3</strong> pick Small/Medium/Big.</li>
         <li>The first square you reveal is always safe — mines aren't placed until then.</li>
@@ -341,6 +358,7 @@
   let cursor = { r: 0, c: 0 };
   let timerSeconds = 0, timerHandle = null;
   let currentSize = 'small';
+  let hintsUsed = 0, continuesUsed = 0;
 
   function randInt(maxExclusive) {
     const buf = new Uint32Array(1);
@@ -375,11 +393,15 @@
     minesPlaced = false;
     flagsPlaced = 0;
     revealedCount = 0;
+    hintsUsed = 0;
+    continuesUsed = 0;
     cursor = { r: 0, c: 0 };
     stopTimer();
     timerSeconds = 0;
     updateTimerDisplay();
     updateMineCounter();
+    updateStatsDisplay();
+    updateHintButton();
     setFace('🙂');
     document.getElementById('win-banner').hidden = true;
     document.getElementById('lose-banner').hidden = true;
@@ -474,7 +496,68 @@
       if (grid[r][c].mine) grid[r][c].revealed = true;
     }
     document.getElementById('lose-banner').hidden = false;
+    updateStatsDisplay();
+    updateHintButton();
     render();
+  }
+
+  // "Continue" only makes sense right after a loss: it turns the mine that
+  // killed you into a flag (so it stops counting as a loss) and un-reveals
+  // every other mine that loseGame() force-revealed for the death screen,
+  // putting the board back the way it was the instant before you hit it.
+  function continueGame() {
+    if (gameState !== 'lost') return;
+    continuesUsed++;
+    for (let r = 0; r < size.rows; r++) for (let c = 0; c < size.cols; c++) {
+      const cell = grid[r][c];
+      if (!cell.mine) continue;
+      if (cell.exploded) {
+        cell.exploded = false;
+        cell.revealed = false;
+        cell.state = 'flag';
+        flagsPlaced++;
+      } else {
+        cell.revealed = false;
+      }
+    }
+    gameState = 'playing';
+    setFace('🙂');
+    document.getElementById('lose-banner').hidden = true;
+    updateMineCounter();
+    updateStatsDisplay();
+    updateHintButton();
+    startTimer();
+    render();
+  }
+
+  // Reveals a random hidden, unflagged, non-mine square on the player's
+  // behalf. Before mines are placed this just picks any hidden square and
+  // reveals it normally - reveal() itself guarantees that first square is
+  // safe, so no special-casing is needed here.
+  function useHint() {
+    if (gameState === 'won' || gameState === 'lost') return;
+    const candidates = [];
+    for (let r = 0; r < size.rows; r++) for (let c = 0; c < size.cols; c++) {
+      const cell = grid[r][c];
+      if (cell.revealed || cell.state !== 'blank') continue;
+      if (minesPlaced && cell.mine) continue;
+      candidates.push([r, c]);
+    }
+    if (!candidates.length) return;
+    const [r, c] = candidates[randInt(candidates.length)];
+    hintsUsed++;
+    reveal(r, c);
+    updateStatsDisplay();
+  }
+
+  function updateHintButton() {
+    document.getElementById('btn-hint').disabled = (gameState === 'won' || gameState === 'lost');
+  }
+
+  function updateStatsDisplay() {
+    const text = `Hints used: ${hintsUsed} · Continues used: ${continuesUsed}`;
+    document.getElementById('win-stats').textContent = text;
+    document.getElementById('lose-stats').textContent = text;
   }
 
   function checkWin() {
@@ -489,6 +572,8 @@
       flagsPlaced = size.mines;
       updateMineCounter();
       document.getElementById('win-banner').hidden = false;
+      updateStatsDisplay();
+      updateHintButton();
     }
   }
 
@@ -577,6 +662,8 @@
   // deliberately picking a size there is friction enough on its own.
   document.getElementById('btn-newgame').addEventListener('click', () => openModal('modal-newgame'));
   document.getElementById('btn-face').addEventListener('click', requestQuickRestart);
+  document.getElementById('btn-hint').addEventListener('click', useHint);
+  document.getElementById('btn-continue').addEventListener('click', continueGame);
 
   function openModal(id) { document.getElementById(id).hidden = false; }
   function closeModal(id) { document.getElementById(id).hidden = true; }
