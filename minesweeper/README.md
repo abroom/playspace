@@ -12,14 +12,21 @@ placed after that click, excluding it and its neighbors.
 
 ## Board sizes
 
-Chosen via the Small/Medium/Big buttons (matches classic Beginner/
-Intermediate/Expert dimensions):
+Chosen from a "Choose a size" dialog opened by the New game button (matches
+classic Beginner/Intermediate/Expert dimensions):
 
 | Size   | Grid   | Mines |
 |--------|--------|-------|
 | Small  | 9×9    | 10    |
 | Medium | 16×16  | 40    |
 | Big    | 30×16  | 99    |
+
+Small and Medium use a fixed cell size. On non-mobile screens (`min-width:
+561px` and `min-height: 481px`), Big instead fills the width of the play area
+with fluid `1fr` grid columns and `aspect-ratio: 1/1` cells (via a
+container-query `cqw` font-size, so the numbers/flags scale with it) — at a
+fixed 22px per cell it looked lost on a wide desktop screen. Below that
+breakpoint it falls back to the fixed size and scrolls horizontally instead.
 
 ## Interaction model
 
@@ -33,22 +40,28 @@ Intermediate/Expert dimensions):
   flag state.
 - Mouse and keyboard share the same cursor position, so switching between
   them mid-game stays consistent.
-- **R** or the smiley face button both start a new game (same size). If a
-  game is actually in progress (`gameState === 'playing'`), either one
-  prompts for confirmation first, so a stray press/click can't wipe out
-  progress — before the first reveal, or once the game's already won/lost,
-  there's nothing to lose so it just restarts immediately.
+- **R** and the smiley face both restart with the *same* size currently being
+  played. If a game is actually in progress (`gameState === 'playing'`), they
+  prompt for confirmation first; otherwise there's nothing to lose, so it
+  restarts immediately.
+- The **New game** button is separate: it always opens the "Choose a size"
+  dialog directly, with no confirmation step — deliberately picking a size
+  there is the friction, even if a game's already in progress.
+- **Escape** doubles as a menu key: it opens the size-picker dialog if nothing
+  else is open, or dismisses whatever dialog is currently open. While it's
+  open, **1**/**2**/**3** pick Small/Medium/Big directly.
+- All custom keyboard shortcuts ignore Cmd/Ctrl/Alt combinations, so browser
+  shortcuts like Cmd+R (reload) or Cmd+F (find) still work normally.
 
 ## On loss
 
-All mines reveal. A mine you'd correctly flagged beforehand shows a green
-background (`.correct-flag`) instead of blending in with the rest — everything
-else unflagged just shows the plain 💣 styling, and the one you actually
-clicked shows red (`.exploded`).
+All mines reveal. The one you actually clicked shows red (`.exploded`); a
+mine you'd correctly flagged beforehand shows green (`.correct-flag`); a
+square you flagged that *wasn't* a mine shows yellow (`.false-flag`) instead
+of just blending in as a normal hidden flag. Everything else unflagged just
+shows the plain 💣 styling.
 
 ## Known intentional non-features
 
 - No chording (clicking a satisfied number to auto-reveal its remaining
   neighbors) — not implemented, kept out of scope.
-- No incorrect-flag marking (an X over a wrongly-flagged non-mine) on loss —
-  only the correct-flag highlight was asked for.

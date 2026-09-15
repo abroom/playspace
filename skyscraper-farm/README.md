@@ -54,6 +54,12 @@ logic:
   legally drop onto (`findEligibleTower`). The tower row and crate row each
   remember their own last-focused position independently (`lastTowerIdx` /
   `lastFreeIdx`), so switching rows and back returns you where you were.
+- **Escape** doubles as a menu key: it opens New farm if nothing else is open
+  (respecting the same underway-confirmation as clicking the button), or
+  dismisses whatever's currently open. While the deal picker is open, **1**/
+  **2**/**3** pick Basic/More/Mixed directly.
+- All custom keyboard shortcuts ignore Cmd/Ctrl/Alt combinations, so browser
+  shortcuts like Cmd+1-9 (switch tab) or Cmd+Backspace still work normally.
 
 Every render fully rebuilds the DOM (`render()` clears and redraws `#yard` and
 `#free-row`), which drops native focus — `focusTarget` tracks where it should
