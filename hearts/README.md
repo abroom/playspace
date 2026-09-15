@@ -86,14 +86,29 @@ source order, rather than relying on rule ordering being kept just so.
 
 ## Keyboard
 
-Card play itself is click/tap only (see below), but a few shortcuts still
-work: **Escape** opens the new-game menu (or dismisses it), and **Backspace**
-or **B** goes back to the Playspace index.
+A cursor (`handCursor`) sits over your own hand, shown as an outline on the
+card; **&larr;**/**&rarr;** move it one card at a time. What Space and the
+vertical keys do depends on the phase:
+
+- **Passing**: Space toggles the focused card in or out of your 3-card
+  selection. **&darr;** drops focus from the hand down onto the Pass button
+  (tracked via `focusArea`); **&uarr;** brings it back up. Space on the Pass
+  button confirms the pass (a no-op if fewer than 3 are selected, same as the
+  button being disabled).
+- **Playing**: Space plays the focused card, if it's legal (a no-op
+  otherwise). **&uarr;**/**&darr;** jump straight to your first/last legal
+  card instead of moving one at a time — handy since `sortHand` groups by
+  suit, so the legal follow-suit cards are always a contiguous run.
+
+Clicking a card with the mouse moves the keyboard cursor there too, so
+switching input methods mid-game stays consistent. **Escape** opens the
+new-game menu (or dismisses it), and **Backspace** or **B** goes back to the
+Playspace index.
 
 ## Known intentional non-features
 
 - No adjustable CPU difficulty or lookahead — heuristics only.
-- No keyboard controls or drag-and-drop for playing cards — click/tap only,
-  unlike the other two games in this repo (could be added later if wanted).
+- No drag-and-drop for playing cards — click/tap or keyboard only, see
+  **Keyboard** above.
 - No mobile-specific layout pass yet beyond a basic `max-width: 700px`
   shrink of cards/table — not as tuned as Skyscraper Farm's mobile pass.

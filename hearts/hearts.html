@@ -211,6 +211,8 @@
   .hand .card.playable:hover { transform: translateY(-8px); }
   .hand .card.selected { transform: translateY(-14px); box-shadow: 0 0 0 2px var(--accent), 0 6px 14px rgba(0,0,0,0.35); }
   .hand .card.unplayable { opacity: 0.45; }
+  .hand .card.cursor { outline: 2px solid var(--accent); outline-offset: 3px; }
+  #btn-pass.cursor { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .pass-controls {
     display: flex; align-items: center; justify-content: center; gap: 12px;
@@ -373,6 +375,7 @@
         <li>Each heart you take is <strong>1 point</strong>; the Queen of Spades is <strong>13 points</strong>. Lower is better.</li>
         <li><strong>Shooting the moon</strong>: take every heart and the Queen yourself, and you score 0 while everyone else takes 26.</li>
         <li>Play continues until someone reaches 100. The lowest score wins.</li>
+        <li>Keyboard: <strong>&larr;</strong>/<strong>&rarr;</strong> move over your hand, <strong>Space</strong> selects a card to pass or plays it. While passing, <strong>&darr;</strong> drops to the Pass button and <strong>&uarr;</strong> returns. While playing, <strong>&uarr;</strong>/<strong>&darr;</strong> jump straight to your first/last legal card.</li>
         <li><strong>Escape</strong> opens the new-game menu. <strong>Backspace</strong> or <strong>B</strong> goes back to the Playspace index.</li>
       </ul>
       <div class="modal-actions">
@@ -460,6 +463,10 @@
   let selectedForPass, pendingPasses;
   let trick, ledSuit, trickLeader, turn, heartsBroken, tricksPlayed, moonShooter, resolvingTrick;
   let cpuTimer = null;
+  // Keyboard cursor over the human's hand: an index into players[0].hand, plus
+  // which "row" has focus during passing (the hand itself, or the Pass button
+  // below it).
+  let handCursor = 0, focusArea = 'hand';
 
   function newMatch() {
     players = NAMES.map(name => ({ name, hand: [], totalScore: 0, handPoints: 0 }));
@@ -496,6 +503,8 @@
     ledSuit = null;
     moonShooter = null;
     selectedForPass = [];
+    handCursor = 0;
+    focusArea = 'hand';
 
     if (passDirection === 'none') {
       beginPlayPhase();
@@ -538,6 +547,8 @@
     trick = [];
     ledSuit = null;
     resolvingTrick = false;
+    handCursor = 0;
+    focusArea = 'hand';
     render();
     maybeAdvanceCPU();
   }
@@ -738,21 +749,25 @@
     handEl.innerHTML = '';
     const canHumanPlay = phase === 'playing' && turn === 0 && !resolvingTrick;
     const legal = canHumanPlay ? legalPlays(0) : [];
-    players[0].hand.forEach(card => {
-      let extra = '';
+    handCursor = Math.max(0, Math.min(handCursor, players[0].hand.length - 1));
+    players[0].hand.forEach((card, i) => {
+      const classes = [];
       if (phase === 'passing') {
-        extra = selectedForPass.includes(card.id) ? 'playable selected' : 'playable';
+        classes.push(selectedForPass.includes(card.id) ? 'playable selected' : 'playable');
       } else if (canHumanPlay) {
         const isLegal = legal.some(c => c.id === card.id);
-        extra = isLegal ? 'playable' : 'unplayable';
+        classes.push(isLegal ? 'playable' : 'unplayable');
       }
-      const el = cardEl(card, { extraClass: extra });
+      const showCursor = i === handCursor && ((phase === 'passing' && focusArea === 'hand') || canHumanPlay);
+      if (showCursor) classes.push('cursor');
+      const el = cardEl(card, { extraClass: classes.join(' ') });
       handEl.appendChild(el);
     });
 
     // pass controls
     const passControls = document.getElementById('pass-controls');
     passControls.hidden = phase !== 'passing';
+    document.getElementById('btn-pass').classList.toggle('cursor', phase === 'passing' && focusArea === 'pass-btn');
     if (phase === 'passing') {
       document.getElementById('pass-instructions').textContent =
         `${selectedForPass.length} / 3 selected`;
@@ -801,6 +816,8 @@
     const el = e.target.closest('.card');
     if (!el) return;
     const id = el.dataset.id;
+    const idx = players[0].hand.findIndex(c => c.id === id);
+    if (idx !== -1) { handCursor = idx; focusArea = 'hand'; }
     if (phase === 'passing') {
       humanTogglePassCard(id);
     } else if (phase === 'playing' && turn === 0 && !resolvingTrick) {
@@ -845,6 +862,48 @@
     } else if (e.key === 'Backspace' || e.key === 'b' || e.key === 'B') {
       e.preventDefault();
       window.location.href = '../index.html';
+    }
+  });
+
+  function anyModalOpen() {
+    return Array.from(document.querySelectorAll('.modal-overlay')).some(m => !m.hidden);
+  }
+
+  // Arrow keys move a cursor over the human's own hand; Space acts on
+  // whatever it's over. During passing, Down drops from the hand row onto
+  // the Pass button and Up returns to the hand. During play, Up/Down instead
+  // jump straight to the first/last legal card - handy since legal follow-suit
+  // cards are always contiguous in the suit-sorted hand.
+  document.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (anyModalOpen()) return;
+    const hand = players[0].hand;
+
+    if (phase === 'passing') {
+      if (focusArea === 'hand') {
+        if (e.key === 'ArrowLeft') { e.preventDefault(); handCursor = Math.max(0, handCursor - 1); render(); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); handCursor = Math.min(hand.length - 1, handCursor + 1); render(); }
+        else if (e.key === 'ArrowDown') { e.preventDefault(); focusArea = 'pass-btn'; render(); }
+        else if (e.key === ' ') { e.preventDefault(); const card = hand[handCursor]; if (card) humanTogglePassCard(card.id); }
+      } else {
+        if (e.key === 'ArrowUp') { e.preventDefault(); focusArea = 'hand'; render(); }
+        else if (e.key === ' ') { e.preventDefault(); humanConfirmPass(); }
+      }
+      return;
+    }
+
+    if (phase === 'playing' && turn === 0 && !resolvingTrick) {
+      const legalIds = new Set(legalPlays(0).map(c => c.id));
+      const legalIndices = hand.map((c, i) => i).filter(i => legalIds.has(hand[i].id));
+      if (e.key === 'ArrowLeft') { e.preventDefault(); handCursor = Math.max(0, handCursor - 1); render(); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); handCursor = Math.min(hand.length - 1, handCursor + 1); render(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); if (legalIndices.length) handCursor = legalIndices[0]; render(); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); if (legalIndices.length) handCursor = legalIndices[legalIndices.length - 1]; render(); }
+      else if (e.key === ' ') {
+        e.preventDefault();
+        const card = hand[handCursor];
+        if (card && legalIds.has(card.id)) playCard(0, card);
+      }
     }
   });
 
