@@ -294,7 +294,7 @@
        of this flex/grid chain needs min-height:0 — the default min-height:auto
        on flex/grid items refuses to shrink below content size, which is what let
        the tower grid force the page taller than the viewport instead of fitting. */
-    .yard { flex: 1 1 auto; min-height: 0; grid-auto-rows: 1fr; }
+    .yard { flex: 1 1 auto; min-height: 0; grid-auto-rows: 1fr; gap: 5px; }
     .tower-col { height: 100%; min-height: 0; }
     .tower { flex: 1 1 auto; height: auto; min-height: 0; }
     .crate-tile, .slot-empty { flex: 1 1 0; height: auto; min-height: 0; font-size: 18px; }
