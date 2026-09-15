@@ -326,6 +326,7 @@
         <li>Hit a mine and only that square reveals — the rest stay hidden. You can then <strong>Reveal</strong> (or <strong>V</strong>) to see every mine and flag, or <strong>Continue</strong> (or <strong>C</strong>) to turn the mine you hit into a flag and keep playing.</li>
         <li>The ⏱️ button (or <strong>P</strong>) pauses the timer and blurs the field so you can step away without giving anything up.</li>
         <li>Keyboard: arrows or WASD move the cursor, <strong>Space</strong> reveals, <strong>F</strong> cycles flag/unsure, <strong>R</strong> restarts the same size.</li>
+        <li><strong>Backspace</strong> or <strong>B</strong> goes back to the Playspace index.</li>
         <li>The smiley restarts the same size too. The <strong>New game</strong> button lets you pick a different one. <strong>Escape</strong> opens the size picker (and pauses, if you weren't already) if nothing's open, or closes whatever's open (resuming, if Escape's the one that paused it). In that dialog, <strong>1</strong>/<strong>2</strong>/<strong>3</strong> pick Small/Medium/Big.</li>
         <li>The first square you reveal is always safe — mines aren't placed until then.</li>
       </ul>
@@ -808,6 +809,13 @@
       if (!paused) { pauseGame(); pausedByMenu = true; }
       openModal('modal-newgame');
     }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key !== 'Backspace' && e.key !== 'b' && e.key !== 'B') return;
+    e.preventDefault();
+    window.location.href = '../index.html';
   });
 
   newGame('small');

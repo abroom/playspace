@@ -408,7 +408,8 @@
         <li>Click another tower to drop onto: it must be empty, have a hidden top animal, or a top animal that matches. You can also drag a tower straight to its destination instead of clicking twice.</li>
         <li>Use crates to temporarily hold an animal.</li>
         <li>Sort all nine towers.</li>
-        <li>Keyboard: number keys jump to a tower (0 for tower 10), arrows or WASD move between towers and crates, Space picks up or drops, and Backspace undoes. Hold Shift to jump 3 towers at a time, or straight to the next tower you can drop onto if you're holding a crate.</li>
+        <li>Keyboard: number keys jump to a tower (0 for tower 10), arrows or WASD move between towers and crates, Space picks up or drops, and U undoes. Hold Shift to jump 3 towers at a time, or straight to the next tower you can drop onto if you're holding a crate.</li>
+        <li>Backspace or B goes back to the Playspace index.</li>
         <li><strong>Escape</strong> opens New farm if nothing's open, or closes whatever's open. In the deal picker, <strong>1</strong>/<strong>2</strong>/<strong>3</strong> pick Basic/More/Mixed.</li>
       </ul>
       <h2 style="margin-top:16px;">Cost</h2>
@@ -872,7 +873,7 @@
       return;
     }
 
-    if (e.key === 'Backspace') {
+    if (e.key === 'u' || e.key === 'U') {
       e.preventDefault();
       undo();
       return;
@@ -968,6 +969,13 @@
     // If nothing was open or being dragged, Escape doubles as a quick way to
     // start a new farm instead of just being a no-op.
     if (!wasOpen && !wasDragging) requestNewFarm();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key !== 'Backspace' && e.key !== 'b' && e.key !== 'B') return;
+    e.preventDefault();
+    window.location.href = '../index.html';
   });
 
   newDeal();

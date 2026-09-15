@@ -84,10 +84,16 @@ source order, rather than relying on rule ordering being kept just so.
   sideways from center in opposite directions (`left: 62%` for yours, `38%`
   for North's) so both stay readable.
 
+## Keyboard
+
+Card play itself is click/tap only (see below), but a few shortcuts still
+work: **Escape** opens the new-game menu (or dismisses it), and **Backspace**
+or **B** goes back to the Playspace index.
+
 ## Known intentional non-features
 
 - No adjustable CPU difficulty or lookahead — heuristics only.
-- No keyboard controls or drag-and-drop — click/tap only, unlike the other
-  two games in this repo (could be added later if wanted).
+- No keyboard controls or drag-and-drop for playing cards — click/tap only,
+  unlike the other two games in this repo (could be added later if wanted).
 - No mobile-specific layout pass yet beyond a basic `max-width: 700px`
   shrink of cards/table — not as tuned as Skyscraper Farm's mobile pass.

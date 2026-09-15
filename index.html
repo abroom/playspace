@@ -96,7 +96,6 @@
   <div class="wrap">
     <header>
       <h1>Playspace</h1>
-      <p>Some small browser games.</p>
     </header>
 
     <div class="games">
@@ -112,7 +111,7 @@
         <span class="game-icon">💣</span>
         <span class="game-body">
           <span class="game-name">Minesweeper</span>
-          <span class="game-desc">The classic — clear every safe square without waking a mine. Small, Medium, or Big.</span>
+          <span class="game-desc">Clear every tile without walking on a mine.</span>
         </span>
       </a>
 
@@ -120,10 +119,38 @@
         <span class="game-icon">♥️</span>
         <span class="game-body">
           <span class="game-name">Hearts</span>
-          <span class="game-desc">Classic 4-player Hearts against three CPU opponents. Avoid the points, or take them all and shoot the moon.</span>
+          <span class="game-desc">Avoid the hearts and the Queen of Spades. Or take them all to shoot the moon.</span>
         </span>
       </a>
     </div>
   </div>
+
+  <script>
+  (function () {
+    const cards = Array.from(document.querySelectorAll('.game-card'));
+    let idx = 0;
+
+    function focusCard(i) {
+      idx = Math.max(0, Math.min(cards.length - 1, i));
+      cards[idx].focus();
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        focusCard(idx + 1);
+      } else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+        e.preventDefault();
+        focusCard(idx - 1);
+      } else if (/^[123]$/.test(e.key) && cards[Number(e.key) - 1]) {
+        e.preventDefault();
+        window.location.href = cards[Number(e.key) - 1].getAttribute('href');
+      }
+    });
+
+    focusCard(0);
+  })();
+  </script>
 </body>
 </html>

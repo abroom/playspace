@@ -373,6 +373,7 @@
         <li>Each heart you take is <strong>1 point</strong>; the Queen of Spades is <strong>13 points</strong>. Lower is better.</li>
         <li><strong>Shooting the moon</strong>: take every heart and the Queen yourself, and you score 0 while everyone else takes 26.</li>
         <li>Play continues until someone reaches 100. The lowest score wins.</li>
+        <li><strong>Escape</strong> opens the new-game menu. <strong>Backspace</strong> or <strong>B</strong> goes back to the Playspace index.</li>
       </ul>
       <div class="modal-actions">
         <button id="help-close" class="primary">Got it</button>
@@ -841,6 +842,9 @@
       const anyOpen = Array.from(document.querySelectorAll('.modal-overlay')).some(m => !m.hidden && m.id !== 'modal-hand-over' && m.id !== 'modal-game-over');
       if (anyOpen) { closeModal('modal-help'); closeModal('modal-confirm'); }
       else if (document.getElementById('modal-help').hidden && document.getElementById('modal-confirm').hidden) requestNewGame();
+    } else if (e.key === 'Backspace' || e.key === 'b' || e.key === 'B') {
+      e.preventDefault();
+      window.location.href = '../index.html';
     }
   });
 

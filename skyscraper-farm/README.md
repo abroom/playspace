@@ -49,7 +49,7 @@ logic:
   up and drop in one gesture — implemented with `pointerdown`/`pointermove`/
   `pointerup`, not the native HTML5 drag-and-drop API.
 - **Keyboard**: number keys jump straight to a tower (`0` = tower 10), arrows
-  or WASD move focus, Space/Enter act, Backspace undoes. Shift+arrow jumps 3
+  or WASD move focus, Space/Enter act, **U** undoes. Shift+arrow jumps 3
   towers, or — if something's picked up — straight to the next tower it could
   legally drop onto (`findEligibleTower`). The tower row and crate row each
   remember their own last-focused position independently (`lastTowerIdx` /
@@ -58,6 +58,8 @@ logic:
   (respecting the same underway-confirmation as clicking the button), or
   dismisses whatever's currently open. While the deal picker is open, **1**/
   **2**/**3** pick Basic/More/Mixed directly.
+- **Backspace** or **B** goes back to the Playspace index — freed up from
+  Undo's old binding so it's consistent with the other two games.
 - All custom keyboard shortcuts ignore Cmd/Ctrl/Alt combinations, so browser
   shortcuts like Cmd+1-9 (switch tab) or Cmd+Backspace still work normally.
 
