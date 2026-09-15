@@ -273,7 +273,14 @@
 
   @media (max-width: 560px) {
     html, body { height: 100%; }
-    .wrap { display: flex; flex-direction: column; height: 100vh; padding: 18px 14px 20px; }
+    .wrap {
+      display: flex; flex-direction: column; padding: 18px 14px 20px;
+      /* 100vh is the viewport as if the mobile address bar were hidden - taller
+         than what's actually visible while it's showing. 100svh is the guaranteed-
+         visible ("small") viewport, so the grid never renders below the fold. */
+      height: 100vh;
+      height: 100svh;
+    }
     .title-block h1 { font-size: 24px; }
     button { font-size: 14px; padding: 10px 14px; }
     .stat-label { font-size: 11.5px; }
