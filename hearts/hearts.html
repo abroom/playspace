@@ -1,0 +1,848 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hearts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  [hidden] { display: none !important; }
+
+  :root {
+    --bg: #8B6544;
+    --rail: #6E4E30;
+    --felt: #2F7A54;
+    --felt-edge: #26623F;
+    --surface: #F3ECDD;
+    --ink: #2B241B;
+    --ink-soft: #6B5F4D;
+    --accent: #C9A227;
+    --accent-ink: #2B241B;
+    --border: rgba(43,36,27,0.22);
+    --shadow: rgba(20,14,8,0.35);
+
+    --card-bg: #F9F5E9;
+    --card-ink: #211C15;
+    --card-red: #B0332B;
+    --card-back-a: #7C1F2A;
+    --card-back-b: #5A1620;
+
+    --success: #3E8F5B;
+    --danger: #B3492F;
+
+    --font-display: "Playfair Display", ui-serif, Georgia, serif;
+    --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #241a10;
+      --rail: #1a130b;
+      --felt: #1B4230;
+      --felt-edge: #12301F;
+      --surface: #2A2419;
+      --ink: #EFE9DA;
+      --ink-soft: #B3A98F;
+      --accent: #E0BA4E;
+      --accent-ink: #201A0F;
+      --border: rgba(239,233,218,0.16);
+      --shadow: rgba(0,0,0,0.5);
+      --success: #6FBF8C;
+      --danger: #E0876C;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #241a10;
+    --rail: #1a130b;
+    --felt: #1B4230;
+    --felt-edge: #12301F;
+    --surface: #2A2419;
+    --ink: #EFE9DA;
+    --ink-soft: #B3A98F;
+    --accent: #E0BA4E;
+    --accent-ink: #201A0F;
+    --border: rgba(239,233,218,0.16);
+    --shadow: rgba(0,0,0,0.5);
+    --success: #6FBF8C;
+    --danger: #E0876C;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); }
+
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 22px 18px 40px; }
+
+  header { padding-bottom: 14px; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
+  .title-row { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+  .back-link {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12.5px; font-weight: 600; color: var(--ink-soft); text-decoration: none;
+  }
+  .back-link:hover { color: var(--ink); }
+  .back-link:hover .back-icon { background: var(--border); }
+  .back-icon {
+    display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
+    width: 26px; height: 26px; border-radius: 999px; background: var(--surface);
+  }
+  .back-icon svg { width: 13px; height: 13px; stroke: currentColor; }
+  h1 {
+    font-family: var(--font-display); font-weight: 700; font-size: 30px;
+    margin: 0; letter-spacing: 0.2px; text-wrap: balance;
+  }
+  header p.tagline { margin: 6px 0 0; color: var(--ink-soft); font-size: 13.5px; }
+
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+  button {
+    font-family: var(--font-body); font-weight: 600; font-size: 13px;
+    background: var(--surface); color: var(--ink); border: 1px solid var(--border);
+    border-radius: 7px; padding: 8px 13px; cursor: pointer;
+  }
+  button:hover { filter: brightness(0.97); }
+  :root[data-theme="dark"] button:hover, @media (prefers-color-scheme: dark) { }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+  button:disabled { opacity: 0.4; cursor: default; }
+
+  .scoreboard {
+    display: flex; gap: 18px; flex-wrap: wrap; margin-left: auto;
+    font-family: var(--font-mono);
+  }
+  .score-entry { display: flex; flex-direction: column; align-items: center; min-width: 56px; }
+  .score-name {
+    font-family: var(--font-body); font-size: 10.5px; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--ink-soft); font-weight: 600;
+  }
+  .score-value { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .score-entry.you .score-name { color: var(--accent); }
+  .score-entry.turn .score-name::after { content: " •"; color: var(--success); }
+
+  .status-line {
+    margin: 14px 0; font-size: 13px; color: var(--ink-soft); min-height: 1.4em;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .status-line strong { color: var(--ink); }
+  .badge {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+    padding: 2px 9px; color: var(--ink-soft);
+  }
+  .badge.hot { color: var(--danger); border-color: var(--danger); }
+
+  .table {
+    background: var(--rail); border-radius: 18px; padding: 14px;
+    box-shadow: inset 0 2px 6px var(--shadow);
+  }
+  .felt {
+    background: var(--felt); border: 6px solid var(--felt-edge); border-radius: 14px;
+    padding: 18px; display: grid; grid-template-columns: 150px 1fr 150px;
+    grid-template-rows: auto 1fr; gap: 10px; min-height: 320px;
+  }
+  .seat { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .seat-north { grid-column: 1 / 4; grid-row: 1; }
+  .seat-west { grid-column: 1; grid-row: 2; align-self: center; }
+  .seat-east { grid-column: 3; grid-row: 2; align-self: center; justify-self: end; }
+  .seat-name {
+    font-family: var(--font-display); font-weight: 600; font-size: 14px; color: #EFE9D8;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  }
+  .seat.turn .seat-name { color: var(--accent); }
+  .card-fan { display: flex; position: relative; }
+  .card-fan .card.back { margin-left: -34px; }
+  .card-fan .card.back:first-child { margin-left: 0; }
+  .fan-count {
+    display: none; position: absolute; inset: 0; margin: auto;
+    width: 22px; height: 22px; border-radius: 999px; background: rgba(0,0,0,0.6);
+    color: #F3ECDD; font-family: var(--font-mono); font-weight: 700; font-size: 12px;
+    align-items: center; justify-content: center; pointer-events: none;
+  }
+
+  .trick-area {
+    grid-column: 2; grid-row: 2; position: relative; min-height: 200px;
+  }
+  /* .card.trick-card (not just .trick-card) so this reliably beats .card's own
+     position:relative regardless of source order - two equal-specificity,
+     single-class rules were fighting over `position`, and .card (defined later)
+     was silently winning, leaving trick cards in normal flow instead of pulled
+     out and placed absolutely within the felt - inflating the table's size as
+     cards were added, and placing them wherever flow put them instead of at
+     the seat positions below. */
+  .card.trick-card { position: absolute; transition: transform 0.15s ease; }
+  .trick-card.pos-0 { bottom: 4px; left: 50%; transform: translateX(-50%); }
+  .trick-card.pos-1 { left: 4px; top: 50%; transform: translateY(-50%); }
+  .trick-card.pos-2 { top: 4px; left: 50%; transform: translateX(-50%); }
+  .trick-card.pos-3 { right: 4px; top: 50%; transform: translateY(-50%); }
+  .trick-empty {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.5); font-family: var(--font-display); font-style: italic; font-size: 14px;
+  }
+
+  .hand-area { margin-top: 18px; }
+  .hand-label {
+    font-family: var(--font-display); font-weight: 600; font-size: 14px;
+    color: var(--ink-soft); margin-bottom: 8px; text-align: center;
+  }
+  .hand-label .you-name { color: var(--accent); }
+  .hand { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 6px 0 10px; min-height: 108px; }
+
+  .card {
+    width: 64px; height: 92px; border-radius: 7px; background: var(--card-bg);
+    color: var(--card-ink); border: 1px solid rgba(0,0,0,0.28);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    position: relative; font-family: var(--font-body); user-select: none; flex: 0 0 auto;
+  }
+  .card.red { color: var(--card-red); }
+  .card .corner {
+    position: absolute; top: 4px; left: 6px; font-size: 13px; font-weight: 700;
+    line-height: 1.05; text-align: center;
+  }
+  .card .corner.bottom { top: auto; bottom: 4px; right: 6px; left: auto; transform: rotate(180deg); }
+  .card .pip {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 26px; opacity: 0.9;
+  }
+  .card.back {
+    background:
+      repeating-linear-gradient(45deg, var(--card-back-a), var(--card-back-a) 6px, var(--card-back-b) 6px, var(--card-back-b) 12px);
+    border: 1px solid rgba(0,0,0,0.35);
+  }
+  .card.back.small { width: 40px; height: 58px; border-radius: 5px; }
+
+  .hand .card { cursor: default; transition: transform 0.12s ease, box-shadow 0.12s ease; }
+  .hand .card.playable { cursor: pointer; }
+  .hand .card.playable:hover { transform: translateY(-8px); }
+  .hand .card.selected { transform: translateY(-14px); box-shadow: 0 0 0 2px var(--accent), 0 6px 14px rgba(0,0,0,0.35); }
+  .hand .card.unplayable { opacity: 0.45; }
+
+  .pass-controls {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    margin-top: 4px; font-size: 13px; color: var(--ink-soft);
+  }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(20,14,8,0.55);
+    display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 50;
+  }
+  .modal-panel {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 22px 24px; max-width: 460px; width: 100%; box-shadow: 0 18px 44px var(--shadow);
+  }
+  .modal-panel h2 { font-family: var(--font-display); font-size: 19px; font-weight: 700; margin: 0 0 12px; }
+  .modal-panel p { margin: 0; font-size: 13.5px; color: var(--ink-soft); line-height: 1.55; }
+  .modal-panel p.story { font-style: italic; margin: 0 0 16px; padding-bottom: 14px; border-bottom: 1px dashed var(--border); }
+  .modal-panel ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; }
+  .modal-panel li { font-size: 13.5px; color: var(--ink-soft); line-height: 1.5; }
+  .modal-panel li strong { color: var(--ink); }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+
+  .hand-summary { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+  .hand-summary th, .hand-summary td {
+    padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+  }
+  .hand-summary th:first-child, .hand-summary td:first-child { text-align: left; }
+  .hand-summary thead th { color: var(--ink-soft); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .hand-summary tfoot td { font-weight: 700; color: var(--ink); }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  @media (max-width: 700px) {
+    .felt { grid-template-columns: 90px 1fr 90px; padding: 10px; gap: 6px; }
+    .card { width: 50px; height: 72px; }
+    .card .corner { font-size: 11px; }
+    .card .pip { font-size: 20px; }
+    .title-row { flex-direction: row; align-items: center; gap: 12px; }
+    h1 { font-size: 22px; }
+
+    /* An opponent's full hand of backs takes up too much vertical space here -
+       show just one card with a count badge instead of a fanned stack. */
+    .card-fan .card.back ~ .card.back { display: none; }
+    .fan-count { display: flex; }
+  }
+
+  /* Landscape/short phones: portrait's narrow-width rules don't catch this (the
+     viewport is plenty wide, just short), and the default two-row felt plus a
+     separate hand section below it don't both fit on screen at once. Put all
+     three opponents in one row up top, and merge the hand into the felt itself
+     (same background/edge, no visual seam) instead of a separate section. */
+  @media (max-height: 480px) {
+    .wrap { padding: 8px 14px 6px; }
+    header { padding-bottom: 4px; margin-bottom: 4px; }
+    .title-row { flex-direction: row; align-items: center; gap: 10px; margin-bottom: 2px; }
+    .back-label { display: none; }
+    h1 { font-size: 17px; }
+    header p.tagline { display: none; }
+    .controls { margin-top: 2px; gap: 8px; }
+    .score-value { font-size: 14px; }
+    .status-line { margin: 4px 0; font-size: 11.5px; }
+
+    .table { padding: 4px; border-radius: 12px 12px 0 0; }
+    .felt {
+      grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto 1fr;
+      padding: 4px 6px; gap: 2px; min-height: 0; border-radius: 10px 10px 0 0;
+    }
+    .seat-north, .seat-west, .seat-east { grid-row: 1; gap: 2px; }
+    .seat-west { grid-column: 1; justify-self: start; }
+    .seat-north { grid-column: 2; }
+    .seat-east { grid-column: 3; justify-self: end; }
+    .seat-name { font-size: 10px; }
+    .card-fan .card.back.small { width: 24px; height: 35px; }
+    /* Same reasoning as the portrait fix: a fanned stack of overlapping backs
+       doesn't fit either, and the -34px overlap (sized for the bigger desktop
+       card) is wider than these smaller backs, so the fan drifted off the edge
+       of the felt entirely. Simplest fix: show one card + a count here too. */
+    .card-fan .card.back ~ .card.back { display: none; }
+    .fan-count { width: 17px; height: 17px; font-size: 9px; display: flex; }
+
+    .trick-area { grid-column: 1 / 4; grid-row: 2; min-height: 62px; }
+    /* The trick area is barely taller than one card here, so North's
+       (top-anchored) and your (bottom-anchored) cards sit almost exactly on
+       top of each other - offset them sideways from center in opposite
+       directions so they're still both readable. */
+    .trick-card.pos-0 { left: 62%; }
+    .trick-card.pos-2 { left: 38%; }
+
+    .hand-area {
+      margin-top: 0; background: var(--felt); border: 6px solid var(--felt-edge);
+      border-top: none; border-radius: 0 0 14px 14px; padding: 2px 12px 6px;
+    }
+    .hand-label { display: none; }
+    .hand { gap: 4px; min-height: 0; padding: 0; }
+    .card { width: 38px; height: 54px; }
+    .card .corner { font-size: 8.5px; }
+    .card .pip { font-size: 13px; }
+    .pass-controls { font-size: 10.5px; margin-top: 0; gap: 8px; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="title-row">
+      <a class="back-link" href="../index.html" aria-label="Back to Playspace" title="Playspace">
+        <span class="back-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></span>
+        <span class="back-label">Playspace</span>
+      </a>
+      <h1>Hearts</h1>
+    </div>
+    <p class="tagline">Avoid every heart and the Queen of Spades — unless you're going for all of them.</p>
+    <div class="controls">
+      <button id="btn-newgame" class="primary">New game</button>
+      <button id="btn-help">How to play</button>
+      <div class="scoreboard" id="scoreboard"></div>
+    </div>
+  </header>
+
+  <p class="status-line" id="status-line"></p>
+
+  <div class="table">
+    <div class="felt">
+      <div class="seat seat-north" id="seat-2">
+        <div class="seat-name">North</div>
+        <div class="card-fan" id="fan-2"></div>
+      </div>
+      <div class="seat seat-west" id="seat-1">
+        <div class="seat-name">West</div>
+        <div class="card-fan" id="fan-1"></div>
+      </div>
+      <div class="trick-area" id="trick-area">
+        <div class="trick-empty" id="trick-empty">waiting for the lead&hellip;</div>
+      </div>
+      <div class="seat seat-east" id="seat-3">
+        <div class="seat-name">East</div>
+        <div class="card-fan" id="fan-3"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hand-area">
+    <div class="hand-label"><span class="you-name">You</span></div>
+    <div class="hand" id="hand"></div>
+    <div class="pass-controls" id="pass-controls" hidden>
+      <span id="pass-instructions"></span>
+      <button id="btn-pass" class="primary" disabled>Pass cards</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-help" hidden>
+    <div class="modal-panel">
+      <h2>How to play</h2>
+      <ul>
+        <li>Each hand deals all 52 cards, 13 to each player. Before play, you pass 3 cards: left, then right, then across, then no pass — repeating in that order every 4 hands.</li>
+        <li>Whoever holds the <strong>2 of clubs</strong> leads the first trick. Follow the led suit if you can; if you can't, play anything.</li>
+        <li>The highest card of the led suit wins the trick and leads the next one. There's no trump suit.</li>
+        <li>Hearts can't be led until one has already been played (voided off onto another trick) — unless hearts are all you have left.</li>
+        <li>No hearts or the <strong>Queen of Spades</strong> can be played on the very first trick, unless you have nothing else.</li>
+        <li>Each heart you take is <strong>1 point</strong>; the Queen of Spades is <strong>13 points</strong>. Lower is better.</li>
+        <li><strong>Shooting the moon</strong>: take every heart and the Queen yourself, and you score 0 while everyone else takes 26.</li>
+        <li>Play continues until someone reaches 100. The lowest score wins.</li>
+      </ul>
+      <div class="modal-actions">
+        <button id="help-close" class="primary">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-confirm" hidden>
+    <div class="modal-panel">
+      <h2>Start a new game?</h2>
+      <p>The current match will be cleared and can't be recovered.</p>
+      <div class="modal-actions">
+        <button id="confirm-cancel">Cancel</button>
+        <button id="confirm-yes" class="primary">Start new game</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-hand-over" hidden>
+    <div class="modal-panel">
+      <h2 id="hand-over-title">Hand over</h2>
+      <p id="hand-over-note"></p>
+      <table class="hand-summary">
+        <thead><tr><th>Player</th><th>This hand</th><th>Total</th></tr></thead>
+        <tbody id="hand-summary-body"></tbody>
+      </table>
+      <div class="modal-actions">
+        <button id="hand-over-continue" class="primary">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-game-over" hidden>
+    <div class="modal-panel">
+      <h2 id="game-over-title">Game over</h2>
+      <table class="hand-summary">
+        <thead><tr><th>Player</th><th>Final score</th></tr></thead>
+        <tbody id="game-over-body"></tbody>
+      </table>
+      <div class="modal-actions">
+        <button id="game-over-newgame" class="primary">New game</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const SUITS = ['♣', '♦', '♠', '♥'];
+  const RANKS = [
+    { r: '2', v: 2 }, { r: '3', v: 3 }, { r: '4', v: 4 }, { r: '5', v: 5 }, { r: '6', v: 6 },
+    { r: '7', v: 7 }, { r: '8', v: 8 }, { r: '9', v: 9 }, { r: '10', v: 10 },
+    { r: 'J', v: 11 }, { r: 'Q', v: 12 }, { r: 'K', v: 13 }, { r: 'A', v: 14 },
+  ];
+  const NAMES = ['You', 'West', 'North', 'East'];
+  const TARGET_SCORE = 100;
+  const SUIT_ORDER = { '♣': 0, '♦': 1, '♠': 2, '♥': 3 };
+
+  function isHeart(c) { return c.suit === '♥'; }
+  function isQueenSpades(c) { return c.suit === '♠' && c.rank === 'Q'; }
+  function isPoint(c) { return isHeart(c) || isQueenSpades(c); }
+  function cardPoints(c) { return isHeart(c) ? 1 : (isQueenSpades(c) ? 13 : 0); }
+
+  function randInt(maxExclusive) {
+    const buf = new Uint32Array(1);
+    crypto.getRandomValues(buf);
+    return Math.floor((buf[0] / 4294967296) * maxExclusive);
+  }
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = randInt(i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  }
+  function sortHand(cards) {
+    return cards.slice().sort((a, b) => SUIT_ORDER[a.suit] - SUIT_ORDER[b.suit] || a.value - b.value);
+  }
+  function makeDeck() {
+    const deck = [];
+    for (const s of SUITS) for (const r of RANKS) deck.push({ suit: s, rank: r.r, value: r.v, id: r.r + s });
+    return deck;
+  }
+
+  let players, handNumber, passDirection, phase;
+  let selectedForPass, pendingPasses;
+  let trick, ledSuit, trickLeader, turn, heartsBroken, tricksPlayed, moonShooter, resolvingTrick;
+  let cpuTimer = null;
+
+  function newMatch() {
+    players = NAMES.map(name => ({ name, hand: [], totalScore: 0, handPoints: 0 }));
+    handNumber = 0;
+    document.getElementById('modal-game-over').hidden = true;
+    startNewHand();
+  }
+
+  function passDirectionFor(n) {
+    return ['left', 'right', 'across', 'none'][(n - 1) % 4];
+  }
+  function passTargetIndex(from) {
+    if (passDirection === 'left') return (from + 1) % 4;
+    if (passDirection === 'right') return (from + 3) % 4;
+    if (passDirection === 'across') return (from + 2) % 4;
+    return from;
+  }
+  function passSourceName(target) {
+    for (let i = 0; i < 4; i++) if (passTargetIndex(i) === target) return players[i].name;
+    return '';
+  }
+
+  function startNewHand() {
+    handNumber++;
+    const deck = shuffle(makeDeck());
+    for (let i = 0; i < 4; i++) {
+      players[i].hand = sortHand(deck.slice(i * 13, (i + 1) * 13));
+      players[i].handPoints = 0;
+    }
+    passDirection = passDirectionFor(handNumber);
+    heartsBroken = false;
+    tricksPlayed = 0;
+    trick = [];
+    ledSuit = null;
+    moonShooter = null;
+    selectedForPass = [];
+
+    if (passDirection === 'none') {
+      beginPlayPhase();
+    } else {
+      phase = 'passing';
+      pendingPasses = {};
+      for (let i = 1; i < 4; i++) pendingPasses[i] = chooseCardsToPass(players[i].hand);
+      render();
+    }
+  }
+
+  function humanTogglePassCard(id) {
+    const idx = selectedForPass.indexOf(id);
+    if (idx !== -1) { selectedForPass.splice(idx, 1); }
+    else if (selectedForPass.length < 3) { selectedForPass.push(id); }
+    render();
+  }
+
+  function humanConfirmPass() {
+    if (selectedForPass.length !== 3) return;
+    pendingPasses[0] = selectedForPass.map(id => players[0].hand.find(c => c.id === id));
+    executePass();
+  }
+
+  function executePass() {
+    const incoming = { 0: [], 1: [], 2: [], 3: [] };
+    for (let i = 0; i < 4; i++) {
+      const passed = pendingPasses[i];
+      players[i].hand = players[i].hand.filter(c => !passed.some(p => p.id === c.id));
+      incoming[passTargetIndex(i)].push(...passed);
+    }
+    for (let i = 0; i < 4; i++) players[i].hand = sortHand(players[i].hand.concat(incoming[i]));
+    beginPlayPhase();
+  }
+
+  function beginPlayPhase() {
+    phase = 'playing';
+    trickLeader = players.findIndex(p => p.hand.some(c => c.suit === '♣' && c.rank === '2'));
+    turn = trickLeader;
+    trick = [];
+    ledSuit = null;
+    resolvingTrick = false;
+    render();
+    maybeAdvanceCPU();
+  }
+
+  function legalPlays(idx) {
+    const hand = players[idx].hand;
+    if (trick.length === 0) {
+      if (tricksPlayed === 0) return hand.filter(c => c.suit === '♣' && c.rank === '2');
+      if (!heartsBroken) {
+        const nonHearts = hand.filter(c => !isHeart(c));
+        return nonHearts.length ? nonHearts : hand.slice();
+      }
+      return hand.slice();
+    }
+    const ofSuit = hand.filter(c => c.suit === ledSuit);
+    if (ofSuit.length) return ofSuit;
+    if (tricksPlayed === 0) {
+      const safe = hand.filter(c => !isPoint(c));
+      return safe.length ? safe : hand.slice();
+    }
+    return hand.slice();
+  }
+
+  function playCard(idx, card) {
+    players[idx].hand = players[idx].hand.filter(c => c.id !== card.id);
+    if (trick.length === 0) ledSuit = card.suit;
+    trick.push({ player: idx, card });
+    if (isHeart(card)) heartsBroken = true;
+    if (trick.length === 4) {
+      // Lock out further plays during the pause before the trick actually resolves -
+      // otherwise `turn` is still stale (e.g. still 0) and a click here would sneak
+      // in an extra, uncounted play on top of an already-complete trick.
+      resolvingTrick = true;
+      render();
+      cpuTimer = setTimeout(resolveTrick, 1000);
+    } else {
+      turn = (idx + 1) % 4;
+      render();
+      maybeAdvanceCPU();
+    }
+  }
+
+  function resolveTrick() {
+    resolvingTrick = false;
+    let winner = trick[0].player, best = trick[0].card;
+    for (const play of trick) {
+      if (play.card.suit === ledSuit && play.card.value > best.value) { best = play.card; winner = play.player; }
+    }
+    const points = trick.reduce((s, p) => s + cardPoints(p.card), 0);
+    players[winner].handPoints += points;
+    tricksPlayed++;
+    trick = [];
+    ledSuit = null;
+    trickLeader = winner;
+    turn = winner;
+    if (tricksPlayed === 13) finishHand();
+    else { render(); maybeAdvanceCPU(); }
+  }
+
+  function finishHand() {
+    const shooter = players.findIndex(p => p.handPoints === 26);
+    moonShooter = shooter !== -1 ? shooter : null;
+    if (moonShooter !== null) {
+      for (let i = 0; i < 4; i++) players[i].totalScore += (i === moonShooter ? 0 : 26);
+    } else {
+      for (let i = 0; i < 4; i++) players[i].totalScore += players[i].handPoints;
+    }
+    phase = 'hand-over';
+    render();
+  }
+
+  function continueAfterHand() {
+    document.getElementById('modal-hand-over').hidden = true;
+    if (players.some(p => p.totalScore >= TARGET_SCORE)) {
+      phase = 'game-over';
+      render();
+    } else {
+      startNewHand();
+    }
+  }
+
+  // ---- AI ----
+  function dangerScore(c) {
+    if (isQueenSpades(c)) return 1000;
+    if (c.suit === '♠' && c.value >= 13) return 500 + c.value;
+    if (isHeart(c)) return 100 + c.value;
+    return c.value;
+  }
+  function chooseCardsToPass(hand) {
+    return hand.slice().sort((a, b) => dangerScore(b) - dangerScore(a)).slice(0, 3);
+  }
+  function aiChooseCard(idx) {
+    const legal = legalPlays(idx);
+    if (trick.length === 0) {
+      if (tricksPlayed === 0) return legal[0];
+      return legal.slice().sort((a, b) => dangerScore(a) - dangerScore(b))[0];
+    }
+    const canFollow = legal.some(c => c.suit === ledSuit);
+    let winningCard = trick[0].card;
+    for (const p of trick) if (p.card.suit === ledSuit && p.card.value > winningCard.value) winningCard = p.card;
+    if (canFollow) {
+      const ofSuit = legal.filter(c => c.suit === ledSuit);
+      const under = ofSuit.filter(c => c.value < winningCard.value);
+      if (under.length) return under.sort((a, b) => b.value - a.value)[0];
+      return ofSuit.sort((a, b) => b.value - a.value)[0];
+    }
+    return legal.slice().sort((a, b) => dangerScore(b) - dangerScore(a))[0];
+  }
+  function maybeAdvanceCPU() {
+    if (phase !== 'playing' || turn === 0 || resolvingTrick) return;
+    cpuTimer = setTimeout(() => {
+      if (phase !== 'playing' || turn === 0 || resolvingTrick) return;
+      playCard(turn, aiChooseCard(turn));
+    }, 700);
+  }
+
+  // ---- rendering ----
+  function cardEl(card, opts = {}) {
+    const div = document.createElement('div');
+    const red = card.suit === '♥' || card.suit === '♦';
+    div.className = 'card' + (red ? ' red' : '') + (opts.extraClass ? ' ' + opts.extraClass : '');
+    div.innerHTML =
+      `<span class="corner">${card.rank}<br>${card.suit}</span>` +
+      `<span class="pip">${card.suit}</span>` +
+      `<span class="corner bottom">${card.rank}<br>${card.suit}</span>`;
+    div.dataset.id = card.id;
+    return div;
+  }
+  function backCardEl(small) {
+    const div = document.createElement('div');
+    div.className = 'card back' + (small ? ' small' : '');
+    return div;
+  }
+
+  function statusText() {
+    if (phase === 'passing') {
+      const target = passTargetIndex(0);
+      return `Hand ${handNumber} &middot; Choose 3 cards to pass ${passDirection} to <strong>${players[target].name}</strong>.`;
+    }
+    if (phase === 'playing') {
+      if (resolvingTrick) return `Hand ${handNumber} &middot; Trick ${tricksPlayed + 1} of 13 &middot; taking the trick&hellip;`;
+      const whoseTurn = turn === 0 ? 'your' : `${players[turn].name}'s`;
+      return `Hand ${handNumber} &middot; Trick ${tricksPlayed + 1} of 13 &middot; ${whoseTurn} turn`;
+    }
+    if (phase === 'hand-over') return `Hand ${handNumber} complete.`;
+    if (phase === 'game-over') return `Game over.`;
+    return '';
+  }
+
+  function render() {
+    // scoreboard
+    const board = document.getElementById('scoreboard');
+    board.innerHTML = '';
+    players.forEach((p, i) => {
+      const el = document.createElement('div');
+      el.className = 'score-entry' + (i === 0 ? ' you' : '') + (phase === 'playing' && turn === i ? ' turn' : '');
+      el.innerHTML = `<span class="score-name">${p.name}</span><span class="score-value">${p.totalScore}</span>`;
+      board.appendChild(el);
+    });
+
+    // status line
+    const status = document.getElementById('status-line');
+    status.innerHTML = statusText() + (heartsBroken && phase === 'playing' ? ' <span class="badge hot">Hearts broken</span>' : '');
+
+    // opponents
+    [1, 2, 3].forEach(i => {
+      const seat = document.getElementById('seat-' + i);
+      seat.classList.toggle('turn', phase === 'playing' && turn === i);
+      const fan = document.getElementById('fan-' + i);
+      fan.innerHTML = '';
+      const count = players[i].hand.length;
+      for (let k = 0; k < count; k++) fan.appendChild(backCardEl(true));
+      if (count > 0) {
+        const badge = document.createElement('span');
+        badge.className = 'fan-count';
+        badge.textContent = count;
+        fan.appendChild(badge);
+      }
+    });
+
+    // trick area
+    const trickArea = document.getElementById('trick-area');
+    trickArea.innerHTML = '';
+    if (trick.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'trick-empty';
+      empty.textContent = phase === 'playing' ? 'waiting for the lead…' : '';
+      trickArea.appendChild(empty);
+    } else {
+      trick.forEach(play => {
+        const el = cardEl(play.card, { extraClass: 'trick-card pos-' + play.player });
+        trickArea.appendChild(el);
+      });
+    }
+
+    // hand
+    const handEl = document.getElementById('hand');
+    handEl.innerHTML = '';
+    const canHumanPlay = phase === 'playing' && turn === 0 && !resolvingTrick;
+    const legal = canHumanPlay ? legalPlays(0) : [];
+    players[0].hand.forEach(card => {
+      let extra = '';
+      if (phase === 'passing') {
+        extra = selectedForPass.includes(card.id) ? 'playable selected' : 'playable';
+      } else if (canHumanPlay) {
+        const isLegal = legal.some(c => c.id === card.id);
+        extra = isLegal ? 'playable' : 'unplayable';
+      }
+      const el = cardEl(card, { extraClass: extra });
+      handEl.appendChild(el);
+    });
+
+    // pass controls
+    const passControls = document.getElementById('pass-controls');
+    passControls.hidden = phase !== 'passing';
+    if (phase === 'passing') {
+      document.getElementById('pass-instructions').textContent =
+        `${selectedForPass.length} / 3 selected`;
+      document.getElementById('btn-pass').disabled = selectedForPass.length !== 3;
+    }
+
+    // hand-over modal
+    if (phase === 'hand-over') renderHandOver();
+    if (phase === 'game-over') renderGameOver();
+  }
+
+  function renderHandOver() {
+    document.getElementById('hand-over-title').textContent = `Hand ${handNumber} complete`;
+    const note = document.getElementById('hand-over-note');
+    note.textContent = moonShooter !== null
+      ? `${players[moonShooter].name} shot the moon! Everyone else takes 26.`
+      : 'Points from this hand have been added to the totals below.';
+    const body = document.getElementById('hand-summary-body');
+    body.innerHTML = '';
+    players.forEach(p => {
+      const tr = document.createElement('tr');
+      const thisHand = moonShooter !== null ? (p === players[moonShooter] ? 0 : 26) : p.handPoints;
+      tr.innerHTML = `<td>${p.name}</td><td>${thisHand}</td><td>${p.totalScore}</td>`;
+      body.appendChild(tr);
+    });
+    document.getElementById('modal-hand-over').hidden = false;
+  }
+
+  function renderGameOver() {
+    const low = Math.min(...players.map(p => p.totalScore));
+    const winners = players.filter(p => p.totalScore === low).map(p => p.name);
+    document.getElementById('game-over-title').textContent =
+      winners.length === 1 ? `${winners[0]} wins!` : `${winners.join(' & ')} tie for the win!`;
+    const body = document.getElementById('game-over-body');
+    body.innerHTML = '';
+    players.slice().sort((a, b) => a.totalScore - b.totalScore).forEach(p => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${p.name}</td><td>${p.totalScore}</td>`;
+      body.appendChild(tr);
+    });
+    document.getElementById('modal-game-over').hidden = false;
+  }
+
+  // ---- interaction ----
+  document.getElementById('hand').addEventListener('click', (e) => {
+    const el = e.target.closest('.card');
+    if (!el) return;
+    const id = el.dataset.id;
+    if (phase === 'passing') {
+      humanTogglePassCard(id);
+    } else if (phase === 'playing' && turn === 0 && !resolvingTrick) {
+      const card = players[0].hand.find(c => c.id === id);
+      if (!card) return;
+      if (!legalPlays(0).some(c => c.id === id)) return;
+      playCard(0, card);
+    }
+  });
+  document.getElementById('btn-pass').addEventListener('click', humanConfirmPass);
+  document.getElementById('hand-over-continue').addEventListener('click', continueAfterHand);
+  document.getElementById('game-over-newgame').addEventListener('click', () => {
+    document.getElementById('modal-game-over').hidden = true;
+    newMatch();
+  });
+
+  function openModal(id) { document.getElementById(id).hidden = false; }
+  function closeModal(id) { document.getElementById(id).hidden = true; }
+
+  function requestNewGame() {
+    const underway = handNumber > 0 && phase !== 'game-over';
+    if (underway) openModal('modal-confirm');
+    else newMatch();
+  }
+  document.getElementById('btn-newgame').addEventListener('click', requestNewGame);
+  document.getElementById('confirm-cancel').addEventListener('click', () => closeModal('modal-confirm'));
+  document.getElementById('confirm-yes').addEventListener('click', () => {
+    closeModal('modal-confirm');
+    newMatch();
+  });
+  document.getElementById('btn-help').addEventListener('click', () => openModal('modal-help'));
+  document.getElementById('help-close').addEventListener('click', () => closeModal('modal-help'));
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => { if (e.target === overlay && overlay.id === 'modal-help') closeModal('modal-help'); });
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === 'Escape') {
+      const anyOpen = Array.from(document.querySelectorAll('.modal-overlay')).some(m => !m.hidden && m.id !== 'modal-hand-over' && m.id !== 'modal-game-over');
+      if (anyOpen) { closeModal('modal-help'); closeModal('modal-confirm'); }
+      else if (document.getElementById('modal-help').hidden && document.getElementById('modal-confirm').hidden) requestNewGame();
+    }
+  });
+
+  newMatch();
+})();
+</script>

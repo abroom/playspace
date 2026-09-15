@@ -8,4 +8,6 @@ A personal scratch space for small side projects and misc notes.
   game (tower/crate sorting). See its own README for details.
 - **[`minesweeper/`](minesweeper/)** — a single-file classic Minesweeper.
   See its own README for details.
+- **[`hearts/`](hearts/)** — a single-file 4-player Hearts vs. 3 CPU
+  opponents. See its own README for details.
 - **`notes/`** — miscellaneous design notes.
