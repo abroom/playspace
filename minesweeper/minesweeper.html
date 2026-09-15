@@ -131,12 +131,25 @@
   .hint-btn {
     font-size: 18px; line-height: 1; padding: 6px 10px; border-radius: 8px;
   }
+  .pause-btn {
+    font-size: 18px; line-height: 1; padding: 6px 10px; border-radius: 8px;
+  }
+  .pause-btn.active { background: var(--accent); color: var(--accent-ink); }
 
-  .board-wrap { overflow-x: auto; padding: 4px; }
+  .board-wrap { position: relative; overflow-x: auto; padding: 4px; }
   .board {
     display: grid; gap: 1px; width: max-content; margin: 0 auto;
     background: var(--border); padding: 6px; border-radius: 4px;
     box-shadow: inset 2px 2px 0 var(--bevel-light), inset -2px -2px 0 var(--bevel-dark);
+  }
+  .board-overlay {
+    position: absolute; inset: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(15,17,13,0.35);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    border-radius: 4px; cursor: default;
+    font-family: var(--font-display); font-size: 13px; color: var(--ink);
+    text-align: center; padding: 12px;
   }
   .cell {
     width: var(--cell-size); height: var(--cell-size);
@@ -272,8 +285,9 @@
         <span class="lcd" id="mine-count">010</span>
         <button class="face-btn" id="btn-face" aria-label="Restart (same size)" title="Restart (same size)">🙂</button>
         <span class="lcd lcd-timer" id="timer">000</span>
+        <button class="pause-btn" id="btn-pause" aria-label="Pause" title="Pause (P)">⏱️</button>
         <span class="lcd lcd-hints" id="hint-count" title="Hints used">000</span>
-        <button class="hint-btn" id="btn-hint" aria-label="Hint" title="Hint: reveal a random safe square">💡</button>
+        <button class="hint-btn" id="btn-hint" aria-label="Hint" title="Hint (H): reveal a random safe square">💡</button>
         <span class="lcd lcd-continues" id="continue-count" title="Continues used">000</span>
       </div>
     </div>
@@ -281,6 +295,7 @@
 
   <div class="board-wrap">
     <div class="board" id="board" role="group" aria-label="Minefield"></div>
+    <div class="board-overlay" id="board-overlay" hidden>Paused — press P or ⏱️ to resume</div>
   </div>
 
   <div class="banner win" id="win-banner" hidden>
@@ -290,8 +305,8 @@
   <div class="banner lose" id="lose-banner" hidden>
     Boom. That was a mine.
     <div class="banner-actions">
-      <button id="btn-continue" class="primary">Continue (flag this mine and keep playing)</button>
-      <button id="btn-reveal">Reveal (show mines and flags)</button>
+      <button id="btn-continue" class="primary" title="Continue (C)">Continue (flag this mine and keep playing)</button>
+      <button id="btn-reveal" title="Reveal (V)">Reveal (show mines and flags)</button>
     </div>
     <div class="banner-stats" id="lose-stats"></div>
   </div>
@@ -306,8 +321,9 @@
         <li>Reveal a mine and it's game over: the one you hit turns red, mines you'd flagged correctly turn green, and flags you got wrong turn yellow.</li>
         <li>Right-click a hidden square to cycle it: blank → 🚩 flagged → ❓ unsure → blank.</li>
         <li>Clear every square that isn't a mine to win.</li>
-        <li>The 💡 button reveals a random safe square for you. It's disabled once the game is over. Hints used are tallied in the yellow counter, continues in the blue one.</li>
-        <li>Hit a mine and only that square reveals — the rest stay hidden. You can then <strong>Reveal</strong> to see every mine and flag, or <strong>Continue</strong> to turn the mine you hit into a flag and keep playing.</li>
+        <li>The 💡 button (or <strong>H</strong>) reveals a random safe square for you. It's disabled once the game is over or paused. Hints used are tallied in the yellow counter, continues in the blue one.</li>
+        <li>Hit a mine and only that square reveals — the rest stay hidden. You can then <strong>Reveal</strong> (or <strong>V</strong>) to see every mine and flag, or <strong>Continue</strong> (or <strong>C</strong>) to turn the mine you hit into a flag and keep playing.</li>
+        <li>The ⏱️ button (or <strong>P</strong>) pauses the timer and blurs the field so you can step away without giving anything up.</li>
         <li>Keyboard: arrows or WASD move the cursor, <strong>Space</strong> reveals, <strong>F</strong> cycles flag/unsure, <strong>R</strong> restarts the same size.</li>
         <li>The smiley restarts the same size too. The <strong>New game</strong> button lets you pick a different one. <strong>Escape</strong> opens the size picker if nothing's open, or closes whatever's open. In that dialog, <strong>1</strong>/<strong>2</strong>/<strong>3</strong> pick Small/Medium/Big.</li>
         <li>The first square you reveal is always safe — mines aren't placed until then.</li>
@@ -371,6 +387,7 @@
   let currentSize = 'small';
   let hintsUsed = 0, continuesUsed = 0;
   let boardRevealed = false;
+  let paused = false;
 
   function randInt(maxExclusive) {
     const buf = new Uint32Array(1);
@@ -408,6 +425,7 @@
     hintsUsed = 0;
     continuesUsed = 0;
     boardRevealed = false;
+    paused = false;
     cursor = { r: 0, c: 0 };
     stopTimer();
     timerSeconds = 0;
@@ -415,6 +433,8 @@
     updateMineCounter();
     updateStatsDisplay();
     updateHintButton();
+    updatePauseButton();
+    document.getElementById('board-overlay').hidden = true;
     document.getElementById('btn-reveal').disabled = false;
     setFace('🙂');
     document.getElementById('win-banner').hidden = true;
@@ -455,7 +475,7 @@
   function setFace(emoji) { document.getElementById('btn-face').textContent = emoji; }
 
   function reveal(r, c) {
-    if (gameState === 'won' || gameState === 'lost') return;
+    if (gameState === 'won' || gameState === 'lost' || paused) return;
     const cell = grid[r][c];
     if (cell.revealed || cell.state !== 'blank') return;
 
@@ -492,7 +512,7 @@
   }
 
   function toggleFlag(r, c) {
-    if (gameState === 'won' || gameState === 'lost') return;
+    if (gameState === 'won' || gameState === 'lost' || paused) return;
     const cell = grid[r][c];
     if (cell.revealed) return;
     if (cell.state === 'blank') { cell.state = 'flag'; flagsPlaced++; }
@@ -510,6 +530,7 @@
     document.getElementById('btn-reveal').disabled = false;
     updateStatsDisplay();
     updateHintButton();
+    updatePauseButton();
     render();
   }
 
@@ -552,6 +573,7 @@
     updateMineCounter();
     updateStatsDisplay();
     updateHintButton();
+    updatePauseButton();
     startTimer();
     render();
   }
@@ -561,7 +583,7 @@
   // reveals it normally - reveal() itself guarantees that first square is
   // safe, so no special-casing is needed here.
   function useHint() {
-    if (gameState === 'won' || gameState === 'lost') return;
+    if (gameState === 'won' || gameState === 'lost' || paused) return;
     const candidates = [];
     for (let r = 0; r < size.rows; r++) for (let c = 0; c < size.cols; c++) {
       const cell = grid[r][c];
@@ -577,7 +599,27 @@
   }
 
   function updateHintButton() {
-    document.getElementById('btn-hint').disabled = (gameState === 'won' || gameState === 'lost');
+    document.getElementById('btn-hint').disabled = (gameState === 'won' || gameState === 'lost' || paused);
+  }
+
+  function updatePauseButton() {
+    document.getElementById('btn-pause').disabled = (gameState === 'won' || gameState === 'lost');
+  }
+
+  // Pauses the timer and blocks board interaction behind a blurred overlay.
+  // Only meaningful while a game is actually underway - disabled entirely
+  // once it's won or lost (see updatePauseButton).
+  function togglePause() {
+    if (gameState === 'won' || gameState === 'lost') return;
+    paused = !paused;
+    if (paused) stopTimer();
+    else if (gameState === 'playing') startTimer();
+    document.getElementById('board-overlay').hidden = !paused;
+    const btn = document.getElementById('btn-pause');
+    btn.classList.toggle('active', paused);
+    btn.title = paused ? 'Resume (P)' : 'Pause (P)';
+    btn.setAttribute('aria-label', paused ? 'Resume' : 'Pause');
+    updateHintButton();
   }
 
   function updateStatsDisplay() {
@@ -602,6 +644,7 @@
       document.getElementById('win-banner').hidden = false;
       updateStatsDisplay();
       updateHintButton();
+      updatePauseButton();
     }
   }
 
@@ -669,6 +712,10 @@
     // Don't hijack browser shortcuts like Cmd/Ctrl+R (reload) or Cmd/Ctrl+F (find) -
     // only plain, unmodified key presses control the game.
     if (e.metaKey || e.ctrlKey || e.altKey) return;
+    // Pause/resume works even while paused (it's the only way out); everything
+    // else below is blocked while paused since it all touches the board.
+    if (e.key === 'p' || e.key === 'P') { e.preventDefault(); togglePause(); return; }
+    if (paused) return;
     if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { e.preventDefault(); moveCursor(0, -1); }
     else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { e.preventDefault(); moveCursor(0, 1); }
     else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { e.preventDefault(); moveCursor(-1, 0); }
@@ -676,6 +723,9 @@
     else if (e.key === ' ') { e.preventDefault(); reveal(cursor.r, cursor.c); }
     else if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFlag(cursor.r, cursor.c); }
     else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); requestQuickRestart(); }
+    else if (e.key === 'h' || e.key === 'H') { e.preventDefault(); useHint(); }
+    else if (e.key === 'c' || e.key === 'C') { e.preventDefault(); continueGame(); }
+    else if (e.key === 'v' || e.key === 'V') { e.preventDefault(); revealBoard(); }
   });
 
   // Face button / R: restart with the same size we're already playing. A game in
@@ -693,6 +743,7 @@
   document.getElementById('btn-hint').addEventListener('click', useHint);
   document.getElementById('btn-continue').addEventListener('click', continueGame);
   document.getElementById('btn-reveal').addEventListener('click', revealBoard);
+  document.getElementById('btn-pause').addEventListener('click', togglePause);
 
   function openModal(id) { document.getElementById(id).hidden = false; }
   function closeModal(id) { document.getElementById(id).hidden = true; }

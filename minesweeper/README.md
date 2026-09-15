@@ -52,6 +52,8 @@ breakpoint it falls back to the fixed size and scrolls horizontally instead.
   open, **1**/**2**/**3** pick Small/Medium/Big directly.
 - All custom keyboard shortcuts ignore Cmd/Ctrl/Alt combinations, so browser
   shortcuts like Cmd+R (reload) or Cmd+F (find) still work normally.
+- **H** is a hint (see below), **P** pauses, and once the game is lost, **C**
+  continues and **V** reveals.
 
 ## On loss
 
@@ -60,27 +62,35 @@ the field stays hidden until you choose to see it (see **Reveal** below).
 
 ## Hint, Reveal, and Continue
 
-Three status-bar squares sit alongside the mine counter and timer: the timer
-is now white, a yellow one tallies hints used, a blue one tallies continues
-used (`hint-count`/`continue-count`, kept in sync by `updateStatsDisplay()`).
-The 💡 button at the right end of the status group is the hint control.
+Status-bar squares sit alongside the mine counter and timer: the timer is now
+white, a yellow one tallies hints used, a blue one tallies continues used
+(`hint-count`/`continue-count`, kept in sync by `updateStatsDisplay()`). The
+💡 button between them is the hint control.
 
-- **Hint** reveals a random hidden, unflagged, non-mine square for you —
-  before mines are placed, any hidden square qualifies, since `reveal()`
-  guarantees the first click is always safe. Disabled once the game is won
-  or lost.
+- **Hint** (💡 or **H**) reveals a random hidden, unflagged, non-mine square
+  for you — before mines are placed, any hidden square qualifies, since
+  `reveal()` guarantees the first click is always safe. Disabled once the
+  game is won, lost, or paused.
 - On loss, the banner offers two buttons:
-  - **Reveal** shows every mine (a correctly-flagged one green,
+  - **Reveal** (or **V**) shows every mine (a correctly-flagged one green,
     `.correct-flag`; a square you flagged that *wasn't* a mine, yellow,
     `.false-flag`) and disables itself once used — `boardRevealed` gates the
     false-flag styling so it only appears after this button is pressed.
-  - **Continue** turns the mine you hit into a flag and un-reveals every
-    other mine (whether or not Reveal had been used), putting the board back
-    to exactly how it looked the instant before you hit it, then resumes the
-    timer and play. You can hit another mine later and continue again.
+  - **Continue** (or **C**) turns the mine you hit into a flag and un-reveals
+    every other mine (whether or not Reveal had been used), putting the board
+    back to exactly how it looked the instant before you hit it, then resumes
+    the timer and play. You can hit another mine later and continue again.
 - Hints and continues are tallied per game (`hintsUsed`, `continuesUsed`) and
   shown on whichever banner appears, in addition to the always-visible status
   bar counters — reset on **New game**/restart.
+
+## Pause
+
+The ⏱️ button (or **P**) toggles `paused`: it stops the timer, blurs the
+board behind a `backdrop-filter` overlay (`#board-overlay`), and blocks every
+other shortcut except P itself, so there's no way to sneak a peek or a move
+in while paused. Disabled once the game is won or lost, since there's
+nothing left to pause.
 
 ## Known intentional non-features
 
