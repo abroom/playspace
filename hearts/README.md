@@ -103,7 +103,11 @@ vertical keys do depends on the phase:
 Clicking a card with the mouse moves the keyboard cursor there too, so
 switching input methods mid-game stays consistent. **Escape** opens the
 new-game menu (or dismisses it), and **Backspace** or **B** goes back to the
-Playspace index.
+Playspace index — prompting for confirmation first (`modal-leave`) if a match
+is underway (`matchUnderway()`: past hand 1 and not yet game-over), otherwise
+it leaves immediately. Only modal-help/modal-confirm/modal-leave hold these
+two shortcuts back (`blockingModalOpen()`) — the automatic hand-over/game-over
+screens don't.
 
 ## Known intentional non-features
 

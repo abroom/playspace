@@ -336,6 +336,17 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="modal-leave" hidden>
+    <div class="modal-panel">
+      <h2>Leave this game?</h2>
+      <p>The current board will be cleared and can't be recovered.</p>
+      <div class="modal-actions">
+        <button id="leave-cancel">Cancel</button>
+        <button id="leave-yes" class="primary">Leave to Playspace</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="modal-confirm" hidden>
     <div class="modal-panel">
       <h2>Restart this game?</h2>
@@ -719,7 +730,8 @@
   function anyModalOpen() {
     return !document.getElementById('modal-help').hidden
       || !document.getElementById('modal-confirm').hidden
-      || !document.getElementById('modal-newgame').hidden;
+      || !document.getElementById('modal-newgame').hidden
+      || !document.getElementById('modal-leave').hidden;
   }
 
   document.addEventListener('keydown', (e) => {
@@ -775,6 +787,16 @@
   document.getElementById('modal-confirm').addEventListener('click', (e) => {
     if (e.target.id === 'modal-confirm') closeModal('modal-confirm');
   });
+
+  function requestLeave() {
+    if (gameState === 'playing') openModal('modal-leave');
+    else window.location.href = '../index.html';
+  }
+  document.getElementById('leave-cancel').addEventListener('click', () => closeModal('modal-leave'));
+  document.getElementById('leave-yes').addEventListener('click', () => { window.location.href = '../index.html'; });
+  document.getElementById('modal-leave').addEventListener('click', (e) => {
+    if (e.target.id === 'modal-leave') closeModal('modal-leave');
+  });
   // If Escape's the one that opened this menu, it auto-paused too (see the
   // Escape handler below) - undo that pause on any way of closing the menu,
   // but leave a pause the player set manually (via P) alone.
@@ -803,7 +825,7 @@
     // the new-game menu and pauses (if not already paused), so it doubles as a
     // quick pause/menu key during play.
     if (anyModalOpen()) {
-      closeModal('modal-help'); closeModal('modal-confirm');
+      closeModal('modal-help'); closeModal('modal-confirm'); closeModal('modal-leave');
       closeNewGameMenu();
     } else {
       if (!paused) { pauseGame(); pausedByMenu = true; }
@@ -814,8 +836,9 @@
   document.addEventListener('keydown', (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key !== 'Backspace' && e.key !== 'b' && e.key !== 'B') return;
+    if (anyModalOpen()) return;
     e.preventDefault();
-    window.location.href = '../index.html';
+    requestLeave();
   });
 
   newGame('small');

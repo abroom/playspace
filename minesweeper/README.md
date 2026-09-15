@@ -58,7 +58,9 @@ breakpoint it falls back to the fixed size and scrolls horizontally instead.
   shortcuts like Cmd+R (reload) or Cmd+F (find) still work normally.
 - **H** is a hint (see below), **P** pauses, and once the game is lost, **C**
   continues and **V** reveals.
-- **Backspace** or **B** goes back to the Playspace index.
+- **Backspace** or **B** goes back to the Playspace index — prompts for
+  confirmation first (`modal-leave`) if a game is in progress
+  (`gameState === 'playing'`), otherwise it leaves immediately.
 
 ## On loss
 

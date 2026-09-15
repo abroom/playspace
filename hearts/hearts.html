@@ -384,6 +384,17 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="modal-leave" hidden>
+    <div class="modal-panel">
+      <h2>Leave this game?</h2>
+      <p>The current match will be cleared and can't be recovered.</p>
+      <div class="modal-actions">
+        <button id="leave-cancel">Cancel</button>
+        <button id="leave-yes" class="primary">Leave to Playspace</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="modal-confirm" hidden>
     <div class="modal-panel">
       <h2>Start a new game?</h2>
@@ -837,9 +848,10 @@
   function openModal(id) { document.getElementById(id).hidden = false; }
   function closeModal(id) { document.getElementById(id).hidden = true; }
 
+  function matchUnderway() { return handNumber > 0 && phase !== 'game-over'; }
+
   function requestNewGame() {
-    const underway = handNumber > 0 && phase !== 'game-over';
-    if (underway) openModal('modal-confirm');
+    if (matchUnderway()) openModal('modal-confirm');
     else newMatch();
   }
   document.getElementById('btn-newgame').addEventListener('click', requestNewGame);
@@ -848,20 +860,38 @@
     closeModal('modal-confirm');
     newMatch();
   });
+
+  function requestLeave() {
+    if (matchUnderway()) openModal('modal-leave');
+    else window.location.href = '../index.html';
+  }
+  document.getElementById('leave-cancel').addEventListener('click', () => closeModal('modal-leave'));
+  document.getElementById('leave-yes').addEventListener('click', () => { window.location.href = '../index.html'; });
+
   document.getElementById('btn-help').addEventListener('click', () => openModal('modal-help'));
   document.getElementById('help-close').addEventListener('click', () => closeModal('modal-help'));
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
     overlay.addEventListener('click', (e) => { if (e.target === overlay && overlay.id === 'modal-help') closeModal('modal-help'); });
   });
+  // Modal-help/modal-confirm/modal-leave are the only dialogs the player
+  // summons on top of an ongoing match, so those are what should hold Escape
+  // and Backspace/B's attention - modal-hand-over/modal-game-over are just
+  // automatic in-between screens and shouldn't block either shortcut.
+  function blockingModalOpen() {
+    return !document.getElementById('modal-help').hidden
+      || !document.getElementById('modal-confirm').hidden
+      || !document.getElementById('modal-leave').hidden;
+  }
+
   document.addEventListener('keydown', (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key === 'Escape') {
-      const anyOpen = Array.from(document.querySelectorAll('.modal-overlay')).some(m => !m.hidden && m.id !== 'modal-hand-over' && m.id !== 'modal-game-over');
-      if (anyOpen) { closeModal('modal-help'); closeModal('modal-confirm'); }
-      else if (document.getElementById('modal-help').hidden && document.getElementById('modal-confirm').hidden) requestNewGame();
+      if (blockingModalOpen()) { closeModal('modal-help'); closeModal('modal-confirm'); closeModal('modal-leave'); }
+      else requestNewGame();
     } else if (e.key === 'Backspace' || e.key === 'b' || e.key === 'B') {
+      if (blockingModalOpen()) return;
       e.preventDefault();
-      window.location.href = '../index.html';
+      requestLeave();
     }
   });
 

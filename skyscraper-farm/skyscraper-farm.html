@@ -373,6 +373,17 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="modal-leave" hidden>
+    <div class="modal-panel">
+      <h2>Leave this farm?</h2>
+      <p>The current board will be cleared and can't be recovered.</p>
+      <div class="modal-actions">
+        <button id="leave-cancel">Cancel</button>
+        <button id="leave-yes" class="primary">Leave to Playspace</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="modal-mode" hidden>
     <div class="modal-panel">
       <p class="story">We moved into our new skyscraper farm in a rush and lost track of our precious animals. Before we can open, we must sort our towers quickly without breaking the bank!</p>
@@ -917,9 +928,10 @@
   function openModal(id) { document.getElementById(id).hidden = false; }
   function closeModal(id) { document.getElementById(id).hidden = true; }
 
+  function farmUnderway() { return moves > 0 || extraFree > 0 || undos > 0; }
+
   function requestNewFarm() {
-    const underway = moves > 0 || extraFree > 0 || undos > 0;
-    if (underway) openModal('modal-confirm');
+    if (farmUnderway()) openModal('modal-confirm');
     else openModal('modal-mode');
   }
   document.getElementById('btn-newgame').addEventListener('click', requestNewFarm);
@@ -928,6 +940,13 @@
     closeModal('modal-confirm');
     openModal('modal-mode');
   });
+
+  function requestLeave() {
+    if (farmUnderway()) openModal('modal-leave');
+    else window.location.href = '../index.html';
+  }
+  document.getElementById('leave-cancel').addEventListener('click', () => closeModal('modal-leave'));
+  document.getElementById('leave-yes').addEventListener('click', () => { window.location.href = '../index.html'; });
   document.getElementById('mode-cancel-btn').addEventListener('click', () => closeModal('modal-mode'));
   document.getElementById('modal-mode').addEventListener('click', (e) => {
     const btn = e.target.closest('.deal-option');
@@ -974,8 +993,10 @@
   document.addEventListener('keydown', (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key !== 'Backspace' && e.key !== 'b' && e.key !== 'B') return;
+    const modalOpen = Array.from(document.querySelectorAll('.modal-overlay')).some(m => !m.hidden);
+    if (modalOpen) return;
     e.preventDefault();
-    window.location.href = '../index.html';
+    requestLeave();
   });
 
   newDeal();

@@ -59,7 +59,10 @@ logic:
   dismisses whatever's currently open. While the deal picker is open, **1**/
   **2**/**3** pick Basic/More/Mixed directly.
 - **Backspace** or **B** goes back to the Playspace index — freed up from
-  Undo's old binding so it's consistent with the other two games.
+  Undo's old binding so it's consistent with the other two games. Prompts for
+  confirmation first (`modal-leave`) if the farm is underway (`farmUnderway()`
+  — the same `moves > 0 || extraFree > 0 || undos > 0` check used to gate the
+  New farm confirmation), otherwise it leaves immediately.
 - All custom keyboard shortcuts ignore Cmd/Ctrl/Alt combinations, so browser
   shortcuts like Cmd+1-9 (switch tab) or Cmd+Backspace still work normally.
 
