@@ -55,25 +55,32 @@ breakpoint it falls back to the fixed size and scrolls horizontally instead.
 
 ## On loss
 
-All mines reveal. The one you actually clicked shows red (`.exploded`); a
-mine you'd correctly flagged beforehand shows green (`.correct-flag`); a
-square you flagged that *wasn't* a mine shows yellow (`.false-flag`) instead
-of just blending in as a normal hidden flag. Everything else unflagged just
-shows the plain 💣 styling.
+Only the mine you actually clicked reveals (red, `.exploded`) — the rest of
+the field stays hidden until you choose to see it (see **Reveal** below).
 
-## Hint and Continue
+## Hint, Reveal, and Continue
+
+Three status-bar squares sit alongside the mine counter and timer: the timer
+is now white, a yellow one tallies hints used, a blue one tallies continues
+used (`hint-count`/`continue-count`, kept in sync by `updateStatsDisplay()`).
+The 💡 button at the right end of the status group is the hint control.
 
 - **Hint** reveals a random hidden, unflagged, non-mine square for you —
   before mines are placed, any hidden square qualifies, since `reveal()`
   guarantees the first click is always safe. Disabled once the game is won
   or lost.
-- **Continue** appears on the loss banner: it turns the mine you hit into a
-  flag (undoing its `.exploded` state) and un-reveals every other mine that
-  `loseGame()` force-revealed for the death screen, putting the board back
-  to exactly how it looked the instant before you hit it, then resumes the
-  timer and play. You can hit another mine later and continue again.
-- Both are tallied per game (`hintsUsed`, `continuesUsed`) and shown on
-  whichever banner appears — reset on **New game**/restart.
+- On loss, the banner offers two buttons:
+  - **Reveal** shows every mine (a correctly-flagged one green,
+    `.correct-flag`; a square you flagged that *wasn't* a mine, yellow,
+    `.false-flag`) and disables itself once used — `boardRevealed` gates the
+    false-flag styling so it only appears after this button is pressed.
+  - **Continue** turns the mine you hit into a flag and un-reveals every
+    other mine (whether or not Reveal had been used), putting the board back
+    to exactly how it looked the instant before you hit it, then resumes the
+    timer and play. You can hit another mine later and continue again.
+- Hints and continues are tallied per game (`hintsUsed`, `continuesUsed`) and
+  shown on whichever banner appears, in addition to the always-visible status
+  bar counters — reset on **New game**/restart.
 
 ## Known intentional non-features
 
