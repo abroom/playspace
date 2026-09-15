@@ -77,27 +77,25 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 26px; background: var(--bg);
   }
-  .game-body { flex: 1 1 auto; min-width: 0; }
+  .game-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
   .game-name {
-    font-family: var(--font-display); font-style: italic; font-size: 24px;
-    margin: 0 0 4px; color: var(--ink);
+    display: block; font-family: var(--font-display); font-style: italic; font-size: 24px;
+    color: var(--ink);
   }
-  .game-desc { margin: 0; font-size: 13.5px; color: var(--ink-soft); line-height: 1.5; }
-  .game-meta {
-    flex: 0 0 auto; font-family: var(--font-mono); font-size: 11px;
-    color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.06em;
-    text-align: right; line-height: 1.6;
-  }
+  .game-desc { display: block; margin: 0; font-size: 13.5px; color: var(--ink-soft); line-height: 1.5; }
 
-  footer { margin-top: 48px; font-size: 12.5px; color: var(--ink-soft); }
-  footer a { color: inherit; }
+  @media (max-width: 560px) {
+    .wrap { padding: 36px 18px 40px; }
+    h1 { font-size: 38px; }
+    .game-card { padding: 16px 18px; }
+  }
 </style>
 </head>
 <body>
   <div class="wrap">
     <header>
       <h1>Playspace</h1>
-      <p>A couple of small browser games, built one conversation at a time. Pick one below.</p>
+      <p>Some small browser games.</p>
     </header>
 
     <div class="games">
@@ -107,7 +105,6 @@
           <span class="game-name">Skyscraper Farm</span>
           <span class="game-desc">Sort nine towers of hidden animals into matching stacks, using as few moving crates as you can.</span>
         </span>
-        <span class="game-meta">Sorting<br>puzzle</span>
       </a>
 
       <a class="game-card" href="minesweeper/minesweeper.html">
@@ -116,11 +113,8 @@
           <span class="game-name">Minesweeper</span>
           <span class="game-desc">The classic — clear every safe square without waking a mine. Small, Medium, or Big.</span>
         </span>
-        <span class="game-meta">Small · Medium<br>Big</span>
       </a>
     </div>
-
-    <footer>Source on <a href="https://github.com/abroom/playspace">GitHub</a>.</footer>
   </div>
 </body>
 </html>
