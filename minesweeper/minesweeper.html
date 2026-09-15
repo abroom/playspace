@@ -325,7 +325,7 @@
         <li>Hit a mine and only that square reveals — the rest stay hidden. You can then <strong>Reveal</strong> (or <strong>V</strong>) to see every mine and flag, or <strong>Continue</strong> (or <strong>C</strong>) to turn the mine you hit into a flag and keep playing.</li>
         <li>The ⏱️ button (or <strong>P</strong>) pauses the timer and blurs the field so you can step away without giving anything up.</li>
         <li>Keyboard: arrows or WASD move the cursor, <strong>Space</strong> reveals, <strong>F</strong> cycles flag/unsure, <strong>R</strong> restarts the same size.</li>
-        <li>The smiley restarts the same size too. The <strong>New game</strong> button lets you pick a different one. <strong>Escape</strong> opens the size picker if nothing's open, or closes whatever's open. In that dialog, <strong>1</strong>/<strong>2</strong>/<strong>3</strong> pick Small/Medium/Big.</li>
+        <li>The smiley restarts the same size too. The <strong>New game</strong> button lets you pick a different one. <strong>Escape</strong> opens the size picker (and pauses, if you weren't already) if nothing's open, or closes whatever's open (resuming, if Escape's the one that paused it). In that dialog, <strong>1</strong>/<strong>2</strong>/<strong>3</strong> pick Small/Medium/Big.</li>
         <li>The first square you reveal is always safe — mines aren't placed until then.</li>
       </ul>
       <div class="modal-actions">
@@ -388,6 +388,7 @@
   let hintsUsed = 0, continuesUsed = 0;
   let boardRevealed = false;
   let paused = false;
+  let pausedByMenu = false;
 
   function randInt(maxExclusive) {
     const buf = new Uint32Array(1);
@@ -426,6 +427,7 @@
     continuesUsed = 0;
     boardRevealed = false;
     paused = false;
+    pausedByMenu = false;
     cursor = { r: 0, c: 0 };
     stopTimer();
     timerSeconds = 0;
@@ -609,11 +611,22 @@
   // Pauses the timer and blocks board interaction behind a blurred overlay.
   // Only meaningful while a game is actually underway - disabled entirely
   // once it's won or lost (see updatePauseButton).
+  function pauseGame() {
+    if (gameState === 'won' || gameState === 'lost' || paused) return;
+    paused = true;
+    stopTimer();
+    updatePauseUI();
+  }
+  function resumeGame() {
+    if (!paused) return;
+    paused = false;
+    if (gameState === 'playing') startTimer();
+    updatePauseUI();
+  }
   function togglePause() {
-    if (gameState === 'won' || gameState === 'lost') return;
-    paused = !paused;
-    if (paused) stopTimer();
-    else if (gameState === 'playing') startTimer();
+    if (paused) resumeGame(); else pauseGame();
+  }
+  function updatePauseUI() {
     document.getElementById('board-overlay').hidden = !paused;
     const btn = document.getElementById('btn-pause');
     btn.classList.toggle('active', paused);
@@ -760,11 +773,18 @@
   document.getElementById('modal-confirm').addEventListener('click', (e) => {
     if (e.target.id === 'modal-confirm') closeModal('modal-confirm');
   });
-  document.getElementById('newgame-cancel').addEventListener('click', () => closeModal('modal-newgame'));
+  // If Escape's the one that opened this menu, it auto-paused too (see the
+  // Escape handler below) - undo that pause on any way of closing the menu,
+  // but leave a pause the player set manually (via P) alone.
+  function closeNewGameMenu() {
+    closeModal('modal-newgame');
+    if (pausedByMenu) { pausedByMenu = false; resumeGame(); }
+  }
+  document.getElementById('newgame-cancel').addEventListener('click', closeNewGameMenu);
   document.getElementById('modal-newgame').addEventListener('click', (e) => {
     const btn = e.target.closest('.size-option');
     if (btn) { closeModal('modal-newgame'); newGame(btn.dataset.size); return; }
-    if (e.target.id === 'modal-newgame') closeModal('modal-newgame');
+    if (e.target.id === 'modal-newgame') closeNewGameMenu();
   });
   const SIZE_KEYS = { '1': 'small', '2': 'medium', '3': 'big' };
   document.addEventListener('keydown', (e) => {
@@ -778,10 +798,13 @@
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     // If something's already open, Escape just dismisses it. Otherwise it opens
-    // the new-game menu, so it doubles as a quick pause/menu key during play.
+    // the new-game menu and pauses (if not already paused), so it doubles as a
+    // quick pause/menu key during play.
     if (anyModalOpen()) {
-      closeModal('modal-help'); closeModal('modal-confirm'); closeModal('modal-newgame');
+      closeModal('modal-help'); closeModal('modal-confirm');
+      closeNewGameMenu();
     } else {
+      if (!paused) { pauseGame(); pausedByMenu = true; }
       openModal('modal-newgame');
     }
   });

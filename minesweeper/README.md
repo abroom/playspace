@@ -49,7 +49,11 @@ breakpoint it falls back to the fixed size and scrolls horizontally instead.
   there is the friction, even if a game's already in progress.
 - **Escape** doubles as a menu key: it opens the size-picker dialog if nothing
   else is open, or dismisses whatever dialog is currently open. While it's
-  open, **1**/**2**/**3** pick Small/Medium/Big directly.
+  open, **1**/**2**/**3** pick Small/Medium/Big directly. Opening the dialog
+  this way also pauses the game (see **Pause** below) if it wasn't paused
+  already, via a `pausedByMenu` flag; closing the dialog by any route (Escape,
+  Cancel, the backdrop) resumes it again in that case, but leaves a pause you
+  set yourself with **P** alone.
 - All custom keyboard shortcuts ignore Cmd/Ctrl/Alt combinations, so browser
   shortcuts like Cmd+R (reload) or Cmd+F (find) still work normally.
 - **H** is a hint (see below), **P** pauses, and once the game is lost, **C**
