@@ -242,6 +242,17 @@
     .back-label { display: none; }
   }
 
+  /* Portrait phones: 4 LCDs + 3 buttons at desktop size run past the edge of
+     narrow screens. Shrink the whole status group rather than letting it
+     wrap or overflow. */
+  @media (max-width: 560px) {
+    .status-group { gap: 4px; }
+    .lcd {
+      font-size: 15px; letter-spacing: 0.5px; padding: 3px 4px; min-width: 2.4ch;
+    }
+    .face-btn, .hint-btn, .pause-btn { font-size: 14px; padding: 4px 6px; }
+  }
+
   /* Landscape/short phones: Medium's 16 rows at full cell size run past the
      bottom of the screen. The cell size is normally set inline via JS
      (per-difficulty), so it takes !important to override here. */
@@ -285,11 +296,11 @@
       <div class="status-group">
         <span class="lcd" id="mine-count">010</span>
         <button class="face-btn" id="btn-face" aria-label="Restart (same size)" title="Restart (same size)">🙂</button>
-        <span class="lcd lcd-timer" id="timer">000</span>
-        <button class="pause-btn" id="btn-pause" aria-label="Pause" title="Pause (P)">⏱️</button>
         <span class="lcd lcd-hints" id="hint-count" title="Hints used">000</span>
         <button class="hint-btn" id="btn-hint" aria-label="Hint" title="Hint (H): reveal a random safe square">💡</button>
         <span class="lcd lcd-continues" id="continue-count" title="Continues used">000</span>
+        <button class="pause-btn" id="btn-pause" aria-label="Pause" title="Pause (P)">⏱️</button>
+        <span class="lcd lcd-timer" id="timer">000</span>
       </div>
     </div>
   </header>

@@ -69,10 +69,12 @@ the field stays hidden until you choose to see it (see **Reveal** below).
 
 ## Hint, Reveal, and Continue
 
-Status-bar squares sit alongside the mine counter and timer: the timer is now
-white, a yellow one tallies hints used, a blue one tallies continues used
-(`hint-count`/`continue-count`, kept in sync by `updateStatsDisplay()`). The
-💡 button between them is the hint control.
+The status bar reads, left to right: mine counter, smiley, hints used
+(yellow), 💡 hint button, continues used (blue), ⏱️ pause button, timer
+(white). Hint/continue counters (`hint-count`/`continue-count`) are kept in
+sync by `updateStatsDisplay()`. On narrow phones (`max-width: 560px`) every
+LCD and button in the group shrinks so all seven still fit in one row instead
+of overflowing.
 
 - **Hint** (💡 or **H**) reveals a random hidden, unflagged, non-mine square
   for you — before mines are placed, any hidden square qualifies, since
