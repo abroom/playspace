@@ -77,8 +77,11 @@ LCD and button in the group shrinks so all seven still fit in one row instead
 of overflowing.
 
 - **Hint** (💡 or **H**) reveals a random hidden, unflagged, non-mine square
-  for you — before mines are placed, any hidden square qualifies, since
-  `reveal()` guarantees the first click is always safe. Disabled once the
+  for you. It prefers one touching the revealed/flagged area (the "frontier")
+  so it reads like an actual hint rather than a blind pick elsewhere on the
+  board; if nothing qualifies (nothing's revealed or flagged yet, e.g. the
+  very first move) it falls back to any hidden non-mine square, and
+  `reveal()` guarantees that first click is always safe. Disabled once the
   game is won, lost, or paused.
 - On loss, the banner offers two buttons:
   - **Reveal** (or **V**) shows every mine (a correctly-flagged one green,
