@@ -754,6 +754,12 @@
   }
 
   function startDragGhost(block, count, x, y) {
+    // Defensive: a previous drag may have failed to clean up its ghost (e.g.
+    // mobile Safari can steal a touch away mid-gesture - for a scroll, a
+    // system edge-swipe, a notification - without ever firing pointerup or
+    // even pointercancel), leaving a "zombie" ghost stuck on the page with no
+    // event left to remove it. Sweep any stragglers before adding a new one.
+    document.querySelectorAll('.drag-ghost').forEach(el => el.remove());
     const info = animalInfo(block.animal);
     const ghost = document.createElement('div');
     ghost.className = 'drag-ghost';
@@ -792,6 +798,23 @@
     if (dragHoverEl) dragHoverEl.classList.remove('drag-over-valid', 'drag-over-invalid');
     dragHoverEl = null;
   }
+
+  // Cleans up an in-progress drag without completing it - shared by Escape,
+  // pointercancel (the OS/browser aborts the gesture instead of a normal
+  // pointerup - common on mobile), and the page going out of view mid-drag.
+  function abortDrag() {
+    if (dragging) {
+      endDragGhost();
+      clearDragHover();
+      selected = null;
+      render();
+    }
+    pointerDown = null;
+    dragging = false;
+  }
+  document.addEventListener('pointercancel', abortDrag);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) abortDrag(); });
+  window.addEventListener('blur', abortDrag);
 
   document.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
@@ -977,14 +1000,7 @@
     const wasOpen = Array.from(document.querySelectorAll('.modal-overlay')).some(m => !m.hidden);
     const wasDragging = dragging;
     document.querySelectorAll('.modal-overlay').forEach(o => { o.hidden = true; });
-    if (wasDragging) {
-      endDragGhost();
-      clearDragHover();
-      pointerDown = null;
-      dragging = false;
-      selected = null;
-      render();
-    }
+    if (wasDragging) abortDrag();
     // If nothing was open or being dragged, Escape doubles as a quick way to
     // start a new farm instead of just being a no-op.
     if (!wasOpen && !wasDragging) requestNewFarm();

@@ -47,7 +47,14 @@ logic:
   target's top is hidden).
 - **Drag**: press and drag past a small threshold (`DRAG_THRESHOLD`) to pick
   up and drop in one gesture — implemented with `pointerdown`/`pointermove`/
-  `pointerup`, not the native HTML5 drag-and-drop API.
+  `pointerup`, not the native HTML5 drag-and-drop API. A floating "ghost" div
+  (`.drag-ghost`) tracks the pointer and is removed on drop. Mobile browsers
+  can steal a touch mid-drag without ever firing `pointerup` (a scroll or
+  edge-swipe gesture taking over, a system dialog, backgrounding the tab), so
+  cleanup isn't just on `pointerup`: `pointercancel`, the tab going hidden
+  (`visibilitychange`), and window `blur` all abort the drag the same way
+  (`abortDrag()`), and `startDragGhost()` also sweeps any stray `.drag-ghost`
+  left in the DOM before adding a new one, as a last-resort safety net.
 - **Keyboard**: number keys jump straight to a tower (`0` = tower 10), arrows
   or WASD move focus, Space/Enter act, **U** undoes. Shift+arrow jumps 3
   towers, or — if something's picked up — straight to the next tower it could
