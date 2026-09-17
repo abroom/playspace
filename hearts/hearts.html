@@ -206,12 +206,15 @@
   }
   .card.back.small { width: 40px; height: 58px; border-radius: 5px; }
 
-  .hand .card { cursor: default; transition: transform 0.12s ease, box-shadow 0.12s ease; }
+  .hand .card { cursor: default; transition: transform 0.12s ease, box-shadow 0.12s ease; touch-action: none; }
   .hand .card.playable { cursor: pointer; }
   .hand .card.playable:hover { transform: translateY(-8px); }
   .hand .card.selected { transform: translateY(-14px); box-shadow: 0 0 0 2px var(--accent), 0 6px 14px rgba(0,0,0,0.35); }
   .hand .card.unplayable { opacity: 0.45; }
   .hand .card.cursor { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .drag-ghost { position: fixed; top: 0; left: 0; z-index: 100; pointer-events: none; box-shadow: 0 10px 22px rgba(0,0,0,0.45); }
+  .felt.drag-over-valid { box-shadow: inset 0 0 0 3px var(--accent); }
   #btn-pass.cursor { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .pass-controls {
@@ -823,20 +826,105 @@
   }
 
   // ---- interaction ----
-  document.getElementById('hand').addEventListener('click', (e) => {
+  // ---- tap and drag-and-drop ----
+  // Tap (pick a card / toggle it for pass) and drag (press, move past a
+  // threshold, release) share one pointerdown/pointermove/pointerup sequence,
+  // the same pattern the other card games use. Dragging only ever applies to
+  // playing a card during your turn - there's no natural "drop target" for
+  // toggling a pass-selection, so that stays tap-only.
+  const DRAG_THRESHOLD = 6;
+  let pointerDown = null;
+  let dragging = false;
+  let dragGhostEl = null;
+
+  function cardIsDraggableNow(id) {
+    return phase === 'playing' && turn === 0 && !resolvingTrick && legalPlays(0).some(c => c.id === id);
+  }
+
+  function startDragGhost(id, x, y) {
+    document.querySelectorAll('.drag-ghost').forEach(el => el.remove());
+    const card = players[0].hand.find(c => c.id === id);
+    if (!card) return;
+    const ghost = cardEl(card);
+    ghost.classList.add('drag-ghost');
+    document.body.appendChild(ghost);
+    dragGhostEl = ghost;
+    moveDragGhost(x, y);
+  }
+  function moveDragGhost(x, y) {
+    if (dragGhostEl) dragGhostEl.style.transform = `translate(${x - 32}px, ${y - 46}px)`;
+  }
+  function endDragGhost() {
+    if (dragGhostEl) dragGhostEl.remove();
+    dragGhostEl = null;
+  }
+  function updateDragHover(x, y) {
+    const el = document.elementFromPoint(x, y);
+    document.querySelector('.felt').classList.toggle('drag-over-valid', !!(el && el.closest('.felt')));
+  }
+  function clearDragHover() {
+    document.querySelector('.felt').classList.remove('drag-over-valid');
+  }
+
+  // Cleans up an in-progress drag without completing it - shared by
+  // pointercancel (the OS/browser aborts the gesture instead of a normal
+  // pointerup - common on mobile) and the page going out of view mid-drag.
+  function abortDrag() {
+    if (dragging) { endDragGhost(); clearDragHover(); render(); }
+    pointerDown = null;
+    dragging = false;
+  }
+  document.addEventListener('pointercancel', abortDrag);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) abortDrag(); });
+  window.addEventListener('blur', abortDrag);
+
+  document.getElementById('hand').addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
     const el = e.target.closest('.card');
     if (!el) return;
-    const id = el.dataset.id;
-    const idx = players[0].hand.findIndex(c => c.id === id);
-    if (idx !== -1) { handCursor = idx; focusArea = 'hand'; }
-    if (phase === 'passing') {
-      humanTogglePassCard(id);
-    } else if (phase === 'playing' && turn === 0 && !resolvingTrick) {
-      const card = players[0].hand.find(c => c.id === id);
-      if (!card) return;
-      if (!legalPlays(0).some(c => c.id === id)) return;
-      playCard(0, card);
+    pointerDown = { x: e.clientX, y: e.clientY, id: el.dataset.id };
+    dragging = false;
+  });
+
+  document.addEventListener('pointermove', (e) => {
+    if (!pointerDown) return;
+    const dx = e.clientX - pointerDown.x, dy = e.clientY - pointerDown.y;
+    if (!dragging && Math.hypot(dx, dy) > DRAG_THRESHOLD) {
+      if (!cardIsDraggableNow(pointerDown.id)) { pointerDown = null; return; }
+      dragging = true;
+      startDragGhost(pointerDown.id, e.clientX, e.clientY);
     }
+    if (dragging) {
+      moveDragGhost(e.clientX, e.clientY);
+      updateDragHover(e.clientX, e.clientY);
+    }
+  });
+
+  document.addEventListener('pointerup', (e) => {
+    if (!pointerDown) return;
+    const id = pointerDown.id;
+    if (dragging) {
+      endDragGhost();
+      clearDragHover();
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      if (el && el.closest('.felt')) {
+        const card = players[0].hand.find(c => c.id === id);
+        if (card) playCard(0, card);
+      } else {
+        render();
+      }
+    } else {
+      const idx = players[0].hand.findIndex(c => c.id === id);
+      if (idx !== -1) { handCursor = idx; focusArea = 'hand'; }
+      if (phase === 'passing') {
+        humanTogglePassCard(id);
+      } else if (phase === 'playing' && turn === 0 && !resolvingTrick) {
+        const card = players[0].hand.find(c => c.id === id);
+        if (card && legalPlays(0).some(c => c.id === id)) playCard(0, card);
+      }
+    }
+    pointerDown = null;
+    dragging = false;
   });
   document.getElementById('btn-pass').addEventListener('click', humanConfirmPass);
   document.getElementById('hand-over-continue').addEventListener('click', continueAfterHand);

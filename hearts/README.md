@@ -109,10 +109,21 @@ it leaves immediately. Only modal-help/modal-confirm/modal-leave hold these
 two shortcuts back (`blockingModalOpen()`) — the automatic hand-over/game-over
 screens don't.
 
+## Drag and drop
+
+Dragging a legal card (past `DRAG_THRESHOLD`) out of your hand and dropping
+it anywhere over the felt plays it — a floating ghost tracks the pointer,
+and the felt gets a highlight while a legal card is being dragged over it.
+Dropping anywhere else (back over the hand, off the board) cancels with no
+move, same as picking a card up and putting it back down. This only applies
+to playing a card on your turn; toggling a card in or out of your 3-card
+pass selection is tap-only, since there's no natural "drop target" for a
+selection toggle the way there is for playing a card onto the table. Shares
+the `pointerdown`/`pointermove`/`pointerup` pattern (and the
+pointercancel/visibilitychange/blur cleanup) the other card games use.
+
 ## Known intentional non-features
 
 - No adjustable CPU difficulty or lookahead — heuristics only.
-- No drag-and-drop for playing cards — click/tap or keyboard only, see
-  **Keyboard** above.
 - No mobile-specific layout pass yet beyond a basic `max-width: 700px`
   shrink of cards/table — not as tuned as Skyscraper Farm's mobile pass.
