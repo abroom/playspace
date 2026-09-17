@@ -24,15 +24,23 @@ drawing — there's no limit on redeals.
 
 ## Interaction model
 
-Click-based only (no drag-and-drop or keyboard card navigation — see
-**Known intentional non-features**):
+Both click/tap and drag-and-drop work, sharing one underlying model:
 
-- Click a face-up card to pick it up — either just that card, or the whole
-  run above it if `idx..end` of its column is a valid alternating-color,
-  descending sequence (`isValidRun`). Click a destination pile (a tableau
-  column, or a foundation) to drop it there. Click the same card again to
-  put it back down; clicking a different valid card switches the selection
-  instead of attempting a move.
+- Click (or press and drag past `DRAG_THRESHOLD`) a face-up card to pick it
+  up — either just that card, or the whole run above it if `idx..end` of its
+  column is a valid alternating-color, descending sequence (`isValidRun`).
+  Click/drop a destination pile (a tableau column, or a foundation) to move
+  it there. Click the same card again to put it back down; clicking a
+  different valid card switches the selection instead of attempting a move.
+- Dragging follows the exact `pointerdown`/`pointermove`/`pointerup`
+  pattern Skyscraper Farm pioneered — a floating "ghost" (a full multi-card
+  stack for a run) tracks the pointer, and the pile under it gets a
+  green/red outline showing whether the drop would be legal
+  (`updateDragHover`/`canMove`). Cleanup isn't just on `pointerup`:
+  `pointercancel`, the tab going hidden, and window `blur` all abort the
+  drag too (see Skyscraper Farm's README for why that matters on mobile),
+  and starting a new drag sweeps any stray `.drag-ghost` left over as a
+  last-resort safety net.
 - Cards can also move **from** a foundation back onto the tableau (classic
   Klondike allows this), not just onto foundations.
 - Click the stock to draw, or to recycle the waste once it's empty.
@@ -76,9 +84,6 @@ horizontal overflow at either end.
 
 ## Known intentional non-features
 
-- No drag-and-drop — click/tap only, matching Hearts' precedent for card
-  games in this repo (unlike Skyscraper Farm's drag-and-drop, which is a
-  block-sorting game, not a card game).
 - No double-click/tap "auto-send to foundation" shortcut — every foundation
   move is still just as reachable via the normal pick-up/click-destination
   flow, this just skips the extra convenience of auto-detecting it.

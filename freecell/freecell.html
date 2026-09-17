@@ -134,7 +134,7 @@
 
   .pile {
     width: var(--card-w); height: var(--card-h); border-radius: calc(var(--card-w) * 0.09);
-    position: relative; cursor: pointer;
+    position: relative; cursor: pointer; touch-action: none;
     border: 2px dashed rgba(255,255,255,0.28);
   }
   .foundation-glyph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
@@ -142,8 +142,16 @@
   .foundation-glyph.red { color: rgba(255,150,140,0.35); }
 
   .tableau { display: flex; gap: var(--pile-gap); justify-content: center; margin-top: var(--pile-gap); }
-  .column { width: var(--card-w); min-height: calc(var(--card-h) * 5); position: relative; cursor: pointer; }
+  .column {
+    width: var(--card-w); min-height: calc(var(--card-h) * 5); position: relative;
+    cursor: pointer; touch-action: none;
+  }
   .column .card { position: absolute; }
+
+  .drag-ghost { position: fixed; top: 0; left: 0; z-index: 100; pointer-events: none; }
+  .drag-ghost .card { position: absolute; box-shadow: 0 10px 22px rgba(0,0,0,0.45); }
+  [data-pile].drag-over-valid { outline: 3px solid var(--accent); outline-offset: 2px; }
+  [data-pile].drag-over-invalid { outline: 3px solid var(--card-red); outline-offset: 2px; }
 
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(18,17,14,0.55);
@@ -429,7 +437,7 @@
     if (dst.pile === 'tableau') { tableau[dst.col].push(...moving); return; }
   }
 
-  function attemptMove(src, dst) {
+  function canMove(src, dst) {
     const moving = getMovingCards(src);
     if (!moving) return false;
     if (moving.length > 1) {
@@ -443,6 +451,12 @@
       if (src.pile === 'foundation' && src.index === dst.index) return false;
       if (src.pile === 'freecell' && src.index === dst.index) return false;
     }
+    return true;
+  }
+
+  function attemptMove(src, dst) {
+    if (!canMove(src, dst)) return false;
+    const moving = getMovingCards(src);
     pushHistory();
     removeMovingCards(src, moving.length);
     placeCards(dst, moving);
@@ -540,13 +554,14 @@
   }
 
   // ---- interaction ----
-  function resolveClickTarget(e) {
-    const pileEl = e.target.closest('[data-pile]');
+  function resolveTargetFromElement(el) {
+    if (!el || typeof el.closest !== 'function') return null;
+    const pileEl = el.closest('[data-pile]');
     if (!pileEl) return null;
     const pile = pileEl.dataset.pile;
     if (pile === 'tableau') {
       const col = Number(pileEl.dataset.col);
-      const cardEl = e.target.closest('.card');
+      const cardEl = el.closest('.card');
       const idx = (cardEl && cardEl.closest('.column') === pileEl) ? Number(cardEl.dataset.idx) : null;
       return { pile: 'tableau', col, idx };
     }
@@ -563,19 +578,24 @@
     return true;
   }
 
-  function trySelect(target) {
-    selected = null;
-    if (target.pile === 'freecell') {
-      if (freeCells[target.index]) selected = { pile: 'freecell', index: target.index };
-    } else if (target.pile === 'foundation') {
-      if (foundations[target.index].length) selected = { pile: 'foundation', index: target.index };
-    } else if (target.pile === 'tableau') {
+  function computeSelection(target) {
+    if (!target) return null;
+    if (target.pile === 'freecell') return freeCells[target.index] ? { pile: 'freecell', index: target.index } : null;
+    if (target.pile === 'foundation') {
+      return foundations[target.index].length ? { pile: 'foundation', index: target.index } : null;
+    }
+    if (target.pile === 'tableau') {
       const col = tableau[target.col];
       const idx = target.idx;
       if (idx != null && col[idx] && isValidRun(col, idx)) {
-        selected = { pile: 'tableau', col: target.col, idx };
+        return { pile: 'tableau', col: target.col, idx };
       }
     }
+    return null;
+  }
+
+  function trySelect(target) {
+    selected = computeSelection(target);
     render();
   }
 
@@ -592,10 +612,131 @@
     }
   }
 
-  document.querySelector('.table').addEventListener('click', (e) => {
-    const target = resolveClickTarget(e);
+  // ---- drag and drop ----
+  // Tap (pick up / drop) and drag (press, move past a threshold, release) both
+  // funnel through the same pointerdown/pointermove/pointerup sequence, the
+  // same pattern Skyscraper Farm and Klondike use.
+  const DRAG_THRESHOLD = 6;
+  let pointerDown = null;
+  let dragging = false;
+  let dragGhostEl = null;
+  let dragHoverEl = null;
+
+  function boardElAt(x, y) {
+    const el = document.elementFromPoint(x, y);
+    return el ? el.closest('[data-pile]') : null;
+  }
+
+  function startDragGhost(sel, x, y) {
+    // Defensive: a previous drag may have failed to clean up (see the
+    // mobile pointercancel/visibilitychange/blur handling below) - sweep any
+    // stragglers before adding a new one.
+    document.querySelectorAll('.drag-ghost').forEach(el => el.remove());
+    const cards = getMovingCards(sel);
+    if (!cards) return;
+    const ref = document.querySelector('.tableau');
+    const cs = getComputedStyle(ref);
+    const cardW = cs.getPropertyValue('--card-w').trim();
+    const cardH = cs.getPropertyValue('--card-h').trim();
+    const cascade = cs.getPropertyValue('--cascade-offset').trim();
+    const wrap = document.createElement('div');
+    wrap.className = 'drag-ghost';
+    wrap.style.width = cardW;
+    wrap.style.height = `calc(${cardH} + ${cascade} * ${cards.length - 1})`;
+    cards.forEach((card, i) => {
+      const el = cardEl(card);
+      el.style.width = cardW;
+      el.style.height = cardH;
+      el.style.top = `calc(${cascade} * ${i})`;
+      el.style.left = '0';
+      wrap.appendChild(el);
+    });
+    document.body.appendChild(wrap);
+    dragGhostEl = wrap;
+    moveDragGhost(x, y);
+  }
+  function moveDragGhost(x, y) {
+    if (dragGhostEl) dragGhostEl.style.transform = `translate(${x - 12}px, ${y - 18}px)`;
+  }
+  function endDragGhost() {
+    if (dragGhostEl) dragGhostEl.remove();
+    dragGhostEl = null;
+  }
+  function updateDragHover(x, y) {
+    const el = boardElAt(x, y);
+    if (el === dragHoverEl) return;
+    if (dragHoverEl) dragHoverEl.classList.remove('drag-over-valid', 'drag-over-invalid');
+    dragHoverEl = el;
+    if (!el || !selected) return;
+    const target = resolveTargetFromElement(el);
     if (!target) return;
-    handlePileClick(target);
+    el.classList.add(canMove(selected, target) ? 'drag-over-valid' : 'drag-over-invalid');
+  }
+  function clearDragHover() {
+    if (dragHoverEl) dragHoverEl.classList.remove('drag-over-valid', 'drag-over-invalid');
+    dragHoverEl = null;
+  }
+
+  // Cleans up an in-progress drag without completing it - shared by
+  // pointercancel (the OS/browser aborts the gesture instead of a normal
+  // pointerup - common on mobile, e.g. a scroll/edge-swipe takeover) and the
+  // page going out of view mid-drag.
+  function abortDrag() {
+    if (dragging) {
+      endDragGhost();
+      clearDragHover();
+      selected = null;
+      render();
+    }
+    pointerDown = null;
+    dragging = false;
+  }
+  document.addEventListener('pointercancel', abortDrag);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) abortDrag(); });
+  window.addEventListener('blur', abortDrag);
+
+  document.querySelector('.table').addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    const target = resolveTargetFromElement(e.target);
+    if (!target) return;
+    pointerDown = { x: e.clientX, y: e.clientY, target };
+    dragging = false;
+  });
+
+  document.addEventListener('pointermove', (e) => {
+    if (!pointerDown) return;
+    const dx = e.clientX - pointerDown.x, dy = e.clientY - pointerDown.y;
+    if (!dragging && Math.hypot(dx, dy) > DRAG_THRESHOLD) {
+      const sel = computeSelection(pointerDown.target);
+      if (!sel) { pointerDown = null; return; }
+      dragging = true;
+      selected = sel;
+      render();
+      startDragGhost(sel, e.clientX, e.clientY);
+    }
+    if (dragging) {
+      moveDragGhost(e.clientX, e.clientY);
+      updateDragHover(e.clientX, e.clientY);
+    }
+  });
+
+  document.addEventListener('pointerup', (e) => {
+    if (!pointerDown) return;
+    if (dragging) {
+      endDragGhost();
+      clearDragHover();
+      const dropEl = boardElAt(e.clientX, e.clientY);
+      const target = dropEl ? resolveTargetFromElement(dropEl) : null;
+      const src = selected;
+      selected = null;
+      if (target) { if (!attemptMove(src, target)) render(); }
+      else render();
+    } else {
+      const target = resolveTargetFromElement(e.target);
+      if (target) handlePileClick(target);
+    }
+    pointerDown = null;
+    dragging = false;
   });
 
   function anyModalOpen() {

@@ -14,15 +14,16 @@ four foundations up by suit, Ace to King, to win.
 
 ## Interaction model
 
-Click-based only, sharing the same pick-up/click-destination pattern as
-Klondike:
+Both click/tap and drag-and-drop work, sharing the same
+pick-up/attempt-a-move pattern as Klondike (see its README for the full
+drag/ghost/cleanup writeup — identical implementation here):
 
-- Click a face-up card to pick it up — either just that card, or the whole
-  run above it if `idx..end` of its column is a valid alternating-color,
-  descending sequence (`isValidRun`). Click a destination (a tableau column,
-  a free cell, or a foundation) to drop it there. Click the same card again
-  to put it back down; clicking a different valid card switches the
-  selection instead of attempting a move.
+- Click (or press and drag) a face-up card to pick it up — either just that
+  card, or the whole run above it if `idx..end` of its column is a valid
+  alternating-color, descending sequence (`isValidRun`). Click/drop a
+  destination (a tableau column, a free cell, or a foundation) to move it
+  there. Click the same card again to put it back down; clicking a
+  different valid card switches the selection instead of attempting a move.
 - **Supermoves**: moving more than one card at once is only allowed onto a
   tableau column, and is capped by `maxSupermove()` — the classic FreeCell
   formula `(1 + empty free cells) × 2^(empty tableau columns)`, where an
@@ -70,8 +71,6 @@ a ~1450px-wide desktop window with no horizontal overflow at either end.
 
 ## Known intentional non-features
 
-- No drag-and-drop — click/tap only, matching Klondike and Hearts'
-  precedent for card games in this repo.
 - No double-click/tap "auto-send to foundation" shortcut.
 - No keyboard cursor for picking cards — only U (undo), Escape, and
   Backspace/B are wired up.
