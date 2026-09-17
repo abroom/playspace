@@ -106,6 +106,31 @@ up, then put it back down since it's the same card again), so this is a
 separate, independent action layered on top rather than a special case of
 the tap logic.
 
+## Drop-anywhere foundations
+
+Dropping a card on *any* of the four foundation slots redirects it to the
+one matching its own suit (`resolveDestination()`), rather than requiring
+the exact slot — foundations are only ever visually distinguished by their
+(possibly empty) contents, so there's no reason to demand pixel-perfect
+targeting for something that only has one correct destination anyway. This
+runs for every input method (click, drag, keyboard Space) since it's inside
+`attemptMove()` itself; the drag hover highlight (`updateDragHover()`) redoes
+the same resolution before checking `canMove()`, so the green/red preview
+matches what actually happens on drop.
+
+## Auto-solve
+
+Once the stock and waste are both empty and every tableau card is face up
+(`canAutoSolve()`), the **Auto-solve** button lights up. Clicking it
+(`autoSolve()`) repeatedly finds any tableau card that can go to its
+foundation and sends it, on a short interval so it's visible rather than an
+instant jump to the end state, until nothing more can move (which, once
+nothing is hidden and nothing is left to draw, means the game is won). This
+is the same "offer to finish it for you" convention most digital Klondike
+implementations use, and it's a greedy loop rather than a full solver —
+it doesn't need to be, since by the time every card is exposed the only
+remaining choices are forced ones anyway.
+
 ## Known intentional non-features
 
 - No redeal limit and no scoring system (Vegas or standard) — redeals are

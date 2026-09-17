@@ -245,6 +245,7 @@
         <li>Tableau columns build down in alternating colors. Unlike Klondike, <strong>any</strong> card can go on an empty column, not just a King.</li>
         <li>Click, or press and drag, a card to pick it up (or the whole run above it, if it's a valid alternating sequence), then click/drop a destination pile. Click the same card again to put it back down.</li>
         <li>Double-click a card to send it wherever it best fits: its foundation, then another legal tableau spot, then an empty free cell.</li>
+        <li>Any foundation slot accepts a drop (redirected to the matching suit), and any free cell accepts a drop (redirected to an open one).</li>
         <li>Arrow keys move a cursor between the free cells/foundations row and the tableau; <strong>Space</strong> does whatever a click at the cursor would.</li>
         <li>Moving several cards at once (a "supermove") is limited by how many free cells and empty columns you have: you can move (1 + empty free cells) &times; 2<sup>empty columns</sup> cards at a time (an empty destination column doesn't count toward its own capacity).</li>
         <li><strong>Undo</strong> any move, any number of times &mdash; each one is tallied. <strong>Give up</strong> any time to see how you did; either way, the final screen shows cards remaining and undos used.</li>
@@ -490,9 +491,27 @@
     return true;
   }
 
+  // Dropping on ANY foundation slot redirects to the one matching the
+  // card's own suit (foundations are only visually distinguished by their
+  // contents), and dropping on an occupied free cell redirects to any other
+  // open one - free cells are otherwise interchangeable, so which one you
+  // happened to drop on isn't meaningful.
+  function resolveDestination(dst, card) {
+    if (dst.pile === 'foundation') {
+      return { pile: 'foundation', index: FOUNDATION_SUITS.indexOf(card.suit) };
+    }
+    if (dst.pile === 'freecell' && freeCells[dst.index] !== null) {
+      const openIndex = freeCells.findIndex(c => c === null);
+      if (openIndex !== -1) return { pile: 'freecell', index: openIndex };
+    }
+    return dst;
+  }
+
   function attemptMove(src, dst) {
-    if (!canMove(src, dst)) return false;
     const moving = getMovingCards(src);
+    if (!moving) return false;
+    dst = resolveDestination(dst, moving[0]);
+    if (!canMove(src, dst)) return false;
     pushHistory();
     removeMovingCards(src, moving.length);
     placeCards(dst, moving);
@@ -741,7 +760,9 @@
     if (!el || !selected) return;
     const target = resolveTargetFromElement(el);
     if (!target) return;
-    el.classList.add(canMove(selected, target) ? 'drag-over-valid' : 'drag-over-invalid');
+    const moving = getMovingCards(selected);
+    const dst = moving ? resolveDestination(target, moving[0]) : target;
+    el.classList.add(moving && canMove(selected, dst) ? 'drag-over-valid' : 'drag-over-invalid');
   }
   function clearDragHover() {
     if (dragHoverEl) dragHoverEl.classList.remove('drag-over-valid', 'drag-over-invalid');

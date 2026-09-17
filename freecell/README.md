@@ -86,6 +86,15 @@ an empty free cell as a last resort. Doesn't apply to a card that's part of
 a bigger run — only ever a single card. Identical implementation to
 Klondike (see its README for the full writeup).
 
+## Drop-anywhere foundations and free cells
+
+Dropping a card on *any* of the four foundation slots redirects it to the
+one matching its own suit, and dropping on an occupied free cell redirects
+to any other open one (`resolveDestination()`) — free cells are otherwise
+interchangeable, so which one you happened to drop on isn't meaningful.
+Identical mechanism to Klondike (see its README for the full writeup,
+including why the drag hover highlight redoes the same resolution).
+
 ## Known intentional non-features
 
 - No alternate rule variants (fewer free cells, 10-column deals, etc.) —
