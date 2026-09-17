@@ -99,19 +99,11 @@
     </header>
 
     <div class="games">
-      <a class="game-card" href="skyscraper-farm/skyscraper-farm.html">
-        <span class="game-icon">🏙️</span>
+      <a class="game-card" href="freecell/freecell.html">
+        <span class="game-icon">🎴</span>
         <span class="game-body">
-          <span class="game-name">Skyscraper Farm</span>
-          <span class="game-desc">Sort nine towers of hidden animals into matching stacks, using as few moving crates as you can.</span>
-        </span>
-      </a>
-
-      <a class="game-card" href="minesweeper/minesweeper.html">
-        <span class="game-icon">💣</span>
-        <span class="game-body">
-          <span class="game-name">Minesweeper</span>
-          <span class="game-desc">Clear every tile without walking on a mine.</span>
+          <span class="game-name">FreeCell</span>
+          <span class="game-desc">Every card dealt face-up — four free cells and a clear head are all you get.</span>
         </span>
       </a>
 
@@ -128,6 +120,22 @@
         <span class="game-body">
           <span class="game-name">Klondike</span>
           <span class="game-desc">The classic solitaire — clear the deck onto four foundations, ace to king.</span>
+        </span>
+      </a>
+
+      <a class="game-card" href="minesweeper/minesweeper.html">
+        <span class="game-icon">💣</span>
+        <span class="game-body">
+          <span class="game-name">Minesweeper</span>
+          <span class="game-desc">Clear every tile without walking on a mine.</span>
+        </span>
+      </a>
+
+      <a class="game-card" href="skyscraper-farm/skyscraper-farm.html">
+        <span class="game-icon">🏙️</span>
+        <span class="game-body">
+          <span class="game-name">Skyscraper Farm</span>
+          <span class="game-desc">Sort nine towers of hidden animals into matching stacks, using as few moving crates as you can.</span>
         </span>
       </a>
     </div>
@@ -151,7 +159,7 @@
       } else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
         e.preventDefault();
         focusCard(idx - 1);
-      } else if (/^[1234]$/.test(e.key) && cards[Number(e.key) - 1]) {
+      } else if (/^[12345]$/.test(e.key) && cards[Number(e.key) - 1]) {
         e.preventDefault();
         window.location.href = cards[Number(e.key) - 1].getAttribute('href');
       }

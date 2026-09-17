@@ -1,0 +1,682 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FreeCell</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎴</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,600;0,700;1,600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  [hidden] { display: none !important; }
+
+  :root {
+    --bg: #E9E7E1;
+    --surface: #FFFFFF;
+    --ink: #201F1C;
+    --ink-soft: #67645C;
+    --accent: #B4872A;
+    --accent-ink: #201F1C;
+    --border: rgba(32,31,28,0.16);
+    --shadow: rgba(18,17,14,0.28);
+
+    --felt: #1B3A5C;
+    --felt-edge: #12283E;
+
+    --card-bg: #FBF8F2;
+    --card-ink: #221C14;
+    --card-red: #A6332B;
+    --card-back-a: #5C2340;
+    --card-back-b: #3E1830;
+
+    --font-display: "EB Garamond", ui-serif, Georgia, serif;
+    --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+    --card-w: 68px;
+    --card-h: 96px;
+    --cascade-offset: 24px;
+    --pile-gap: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #171613; --surface: #221F1A; --ink: #EDEAE1; --ink-soft: #A69C8D;
+      --accent: #D9A83F; --accent-ink: #1A140D;
+      --border: rgba(237,234,225,0.14); --shadow: rgba(0,0,0,0.5);
+      --felt: #12293F; --felt-edge: #0B1B2A;
+      --card-bg: #F1ECE0; --card-ink: #221C14; --card-red: #B14038;
+      --card-back-a: #6B2A4A; --card-back-b: #451C33;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #171613; --surface: #221F1A; --ink: #EDEAE1; --ink-soft: #A69C8D;
+    --accent: #D9A83F; --accent-ink: #1A140D;
+    --border: rgba(237,234,225,0.14); --shadow: rgba(0,0,0,0.5);
+    --felt: #12293F; --felt-edge: #0B1B2A;
+    --card-bg: #F1ECE0; --card-ink: #221C14; --card-red: #B14038;
+    --card-back-a: #6B2A4A; --card-back-b: #451C33;
+  }
+
+  @media (max-width: 560px) {
+    :root {
+      --card-w: 32px; --card-h: 45px;
+      --cascade-offset: 11px; --pile-gap: 3px;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); }
+
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 22px 18px 40px; }
+
+  header { padding-bottom: 14px; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
+  .title-row { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+  .back-link {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12.5px; font-weight: 600; color: var(--ink-soft); text-decoration: none;
+  }
+  .back-link:hover { color: var(--ink); }
+  .back-link:hover .back-icon { background: var(--border); }
+  .back-icon {
+    display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
+    width: 26px; height: 26px; border-radius: 999px; background: var(--surface);
+  }
+  .back-icon svg { width: 13px; height: 13px; stroke: currentColor; }
+  h1 {
+    font-family: var(--font-display); font-weight: 700; font-size: 30px;
+    margin: 0; letter-spacing: 0.2px; text-wrap: balance;
+  }
+  header p.tagline { margin: 6px 0 0; color: var(--ink-soft); font-size: 13.5px; }
+
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+  button {
+    font-family: var(--font-body); font-weight: 600; font-size: 13px;
+    background: var(--surface); color: var(--ink); border: 1px solid var(--border);
+    border-radius: 7px; padding: 8px 13px; cursor: pointer;
+  }
+  button:hover { filter: brightness(0.97); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+  button:disabled { opacity: 0.4; cursor: default; }
+
+  .stats-group { display: flex; gap: 18px; margin-left: auto; font-family: var(--font-mono); }
+  .stat { display: flex; flex-direction: column; align-items: center; min-width: 52px; }
+  .stat-label {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-soft); font-weight: 600; font-family: var(--font-body);
+  }
+  .stat-value { font-weight: 600; font-size: 18px; font-variant-numeric: tabular-nums; }
+
+  .table {
+    background: var(--felt); border: 6px solid var(--felt-edge); border-radius: 14px;
+    padding: 18px; box-shadow: inset 0 2px 6px var(--shadow);
+  }
+
+  .card {
+    width: var(--card-w); height: var(--card-h); border-radius: calc(var(--card-w) * 0.09);
+    background: var(--card-bg); color: var(--card-ink); border: 1px solid rgba(0,0,0,0.28);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    position: absolute; top: 0; left: 0; font-family: var(--font-body); user-select: none;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+  }
+  .card.red { color: var(--card-red); }
+  .card .corner {
+    position: absolute; top: calc(var(--card-w) * 0.05); left: calc(var(--card-w) * 0.08);
+    font-size: calc(var(--card-w) * 0.18); font-weight: 700; line-height: 1.05; text-align: center;
+  }
+  .card .corner.bottom { top: auto; bottom: calc(var(--card-w) * 0.05); right: calc(var(--card-w) * 0.08); left: auto; transform: rotate(180deg); }
+  .card .pip {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: calc(var(--card-w) * 0.34); opacity: 0.9;
+  }
+  .card.selected { box-shadow: 0 0 0 2px var(--accent), 0 6px 14px rgba(0,0,0,0.4); transform: translateY(calc(var(--card-h) * -0.08)); }
+
+  .row-top { display: flex; justify-content: space-between; flex-wrap: wrap; gap: calc(var(--pile-gap) * 2); margin-bottom: calc(var(--pile-gap) * 2); }
+  .freecells { display: flex; gap: var(--pile-gap); }
+  .foundations { display: flex; gap: var(--pile-gap); }
+
+  .pile {
+    width: var(--card-w); height: var(--card-h); border-radius: calc(var(--card-w) * 0.09);
+    position: relative; cursor: pointer;
+    border: 2px dashed rgba(255,255,255,0.28);
+  }
+  .foundation-glyph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: calc(var(--card-w) * 0.42); color: rgba(255,255,255,0.35); }
+  .foundation-glyph.red { color: rgba(255,150,140,0.35); }
+
+  .tableau { display: flex; gap: var(--pile-gap); justify-content: center; margin-top: var(--pile-gap); }
+  .column { width: var(--card-w); min-height: calc(var(--card-h) * 5); position: relative; cursor: pointer; }
+  .column .card { position: absolute; }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(18,17,14,0.55);
+    display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 50;
+  }
+  .modal-panel {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 22px 24px; max-width: 460px; width: 100%; box-shadow: 0 18px 44px var(--shadow);
+  }
+  .modal-panel h2 { font-family: var(--font-display); font-size: 20px; font-weight: 700; margin: 0 0 12px; }
+  .modal-panel p { margin: 0; font-size: 13.5px; color: var(--ink-soft); line-height: 1.55; }
+  .modal-panel ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; }
+  .modal-panel li { font-size: 13.5px; color: var(--ink-soft); line-height: 1.5; }
+  .modal-panel li strong { color: var(--ink); }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+
+  .gameover-stats { display: flex; gap: 22px; margin: 14px 0 0; }
+  .gameover-stats .stat { min-width: 0; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  @media (max-width: 560px) {
+    .title-row { flex-direction: row; align-items: center; gap: 12px; }
+    h1 { font-size: 20px; }
+    header p.tagline { display: none; }
+    .stats-group { gap: 10px; }
+    .stat { min-width: 0; }
+    .stat-label { font-size: 9px; }
+    .stat-value { font-size: 14px; }
+    .table { padding: 8px; border-radius: 10px; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="title-row">
+      <a class="back-link" href="../index.html" aria-label="Back to Playspace" title="Playspace">
+        <span class="back-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></span>
+        <span class="back-label">Playspace</span>
+      </a>
+      <h1>FreeCell</h1>
+    </div>
+    <p class="tagline">Every card dealt face-up &mdash; four free cells and a clear head are all you get.</p>
+    <div class="controls">
+      <button id="btn-newgame" class="primary">New game</button>
+      <button id="btn-help">How to play</button>
+      <button id="btn-undo">Undo</button>
+      <button id="btn-giveup">Give up</button>
+      <div class="stats-group">
+        <span class="stat"><span class="stat-label">Moves</span><span class="stat-value" id="stat-moves">0</span></span>
+        <span class="stat"><span class="stat-label">Undos</span><span class="stat-value" id="stat-undos">0</span></span>
+        <span class="stat"><span class="stat-label">Left</span><span class="stat-value" id="stat-left">52</span></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="table">
+    <div class="row-top">
+      <div class="freecells" id="freecells">
+        <div class="pile freecell" id="freecell-0" data-pile="freecell" data-index="0"></div>
+        <div class="pile freecell" id="freecell-1" data-pile="freecell" data-index="1"></div>
+        <div class="pile freecell" id="freecell-2" data-pile="freecell" data-index="2"></div>
+        <div class="pile freecell" id="freecell-3" data-pile="freecell" data-index="3"></div>
+      </div>
+      <div class="foundations" id="foundations">
+        <div class="pile foundation" id="foundation-0" data-pile="foundation" data-index="0"></div>
+        <div class="pile foundation" id="foundation-1" data-pile="foundation" data-index="1"></div>
+        <div class="pile foundation" id="foundation-2" data-pile="foundation" data-index="2"></div>
+        <div class="pile foundation" id="foundation-3" data-pile="foundation" data-index="3"></div>
+      </div>
+    </div>
+    <div class="tableau" id="tableau">
+      <div class="column" id="col-0" data-pile="tableau" data-col="0"></div>
+      <div class="column" id="col-1" data-pile="tableau" data-col="1"></div>
+      <div class="column" id="col-2" data-pile="tableau" data-col="2"></div>
+      <div class="column" id="col-3" data-pile="tableau" data-col="3"></div>
+      <div class="column" id="col-4" data-pile="tableau" data-col="4"></div>
+      <div class="column" id="col-5" data-pile="tableau" data-col="5"></div>
+      <div class="column" id="col-6" data-pile="tableau" data-col="6"></div>
+      <div class="column" id="col-7" data-pile="tableau" data-col="7"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-help" hidden>
+    <div class="modal-panel">
+      <h2>How to play</h2>
+      <ul>
+        <li>All 52 cards deal face-up across 8 tableau columns &mdash; nothing is hidden.</li>
+        <li>4 free cells each hold one card. 4 foundations build up by suit, Ace to King.</li>
+        <li>Tableau columns build down in alternating colors. Unlike Klondike, <strong>any</strong> card can go on an empty column, not just a King.</li>
+        <li>Click a card to pick it up (or the whole run above it, if it's a valid alternating sequence), then click a destination pile. Click the same card again to put it back down.</li>
+        <li>Moving several cards at once (a "supermove") is limited by how many free cells and empty columns you have: you can move (1 + empty free cells) &times; 2<sup>empty columns</sup> cards at a time (an empty destination column doesn't count toward its own capacity).</li>
+        <li><strong>Undo</strong> any move, any number of times &mdash; each one is tallied. <strong>Give up</strong> any time to see how you did; either way, the final screen shows cards remaining and undos used.</li>
+        <li>Keyboard: <strong>U</strong> undoes. <strong>Escape</strong> puts down a held card, or starts a new game if nothing's held (or closes whatever's open). <strong>Backspace</strong> or <strong>B</strong> goes back to the Playspace index.</li>
+      </ul>
+      <div class="modal-actions">
+        <button id="help-close" class="primary">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-confirm" hidden>
+    <div class="modal-panel">
+      <h2>Start a new game?</h2>
+      <p>The current deal will be cleared and can't be recovered.</p>
+      <div class="modal-actions">
+        <button id="confirm-cancel">Cancel</button>
+        <button id="confirm-yes" class="primary">Start new game</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-leave" hidden>
+    <div class="modal-panel">
+      <h2>Leave this game?</h2>
+      <p>The current deal will be cleared and can't be recovered.</p>
+      <div class="modal-actions">
+        <button id="leave-cancel">Cancel</button>
+        <button id="leave-yes" class="primary">Leave to Playspace</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-giveup" hidden>
+    <div class="modal-panel">
+      <h2>Give up this deal?</h2>
+      <p>You'll see how it stacked up, but you won't be able to keep playing it.</p>
+      <div class="modal-actions">
+        <button id="giveup-cancel">Cancel</button>
+        <button id="giveup-yes" class="primary">Give up</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-gameover" hidden>
+    <div class="modal-panel">
+      <h2 id="gameover-title">Game over</h2>
+      <p id="gameover-note"></p>
+      <div class="gameover-stats">
+        <span class="stat"><span class="stat-label">Undos used</span><span class="stat-value" id="stat-final-undos">0</span></span>
+        <span class="stat"><span class="stat-label">Cards remaining</span><span class="stat-value" id="stat-final-left">0</span></span>
+      </div>
+      <div class="modal-actions">
+        <button id="gameover-newgame" class="primary">New game</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const SUITS = ['♠', '♥', '♦', '♣'];
+  const RANKS = [
+    { r: 'A', v: 1 }, { r: '2', v: 2 }, { r: '3', v: 3 }, { r: '4', v: 4 }, { r: '5', v: 5 },
+    { r: '6', v: 6 }, { r: '7', v: 7 }, { r: '8', v: 8 }, { r: '9', v: 9 }, { r: '10', v: 10 },
+    { r: 'J', v: 11 }, { r: 'Q', v: 12 }, { r: 'K', v: 13 },
+  ];
+  const FOUNDATION_SUITS = ['♠', '♥', '♦', '♣'];
+  const COLS = 8;
+
+  function randInt(maxExclusive) {
+    const buf = new Uint32Array(1);
+    crypto.getRandomValues(buf);
+    return Math.floor((buf[0] / 4294967296) * maxExclusive);
+  }
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = randInt(i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  }
+  function makeDeck() {
+    const deck = [];
+    for (const s of SUITS) for (const rk of RANKS) {
+      deck.push({
+        suit: s, rank: rk.r, value: rk.v,
+        color: (s === '♥' || s === '♦') ? 'red' : 'black',
+        id: rk.r + s,
+      });
+    }
+    return deck;
+  }
+
+  let freeCells, foundations, tableau;
+  let history, moves, undos, selected, gameState;
+
+  function newGame() {
+    const deck = shuffle(makeDeck());
+    tableau = Array.from({ length: COLS }, () => []);
+    deck.forEach((card, i) => { tableau[i % COLS].push(card); });
+    freeCells = [null, null, null, null];
+    foundations = [[], [], [], []];
+    history = [];
+    moves = 0;
+    undos = 0;
+    selected = null;
+    gameState = 'playing';
+    document.querySelectorAll('.modal-overlay').forEach(m => { m.hidden = true; });
+    render();
+  }
+
+  function snapshot() {
+    return JSON.stringify({ freeCells, foundations, tableau, moves });
+  }
+  function pushHistory() { history.push(snapshot()); }
+  function undo() {
+    if (!history.length || gameState !== 'playing') return;
+    const s = JSON.parse(history.pop());
+    freeCells = s.freeCells; foundations = s.foundations; tableau = s.tableau; moves = s.moves;
+    undos++;
+    selected = null;
+    render();
+  }
+
+  function gameUnderway() { return gameState === 'playing' && moves > 0; }
+
+  function isValidRun(col, idx) {
+    for (let i = idx; i < col.length - 1; i++) {
+      const lower = col[i], upper = col[i + 1];
+      if (upper.color === lower.color) return false;
+      if (upper.value !== lower.value - 1) return false;
+    }
+    return true;
+  }
+
+  // Classic FreeCell "supermove" capacity: each empty free cell or empty
+  // tableau column can hold one card as temporary parking, and each empty
+  // column doubles what the free cells alone could shuttle (you can use it
+  // as a stepping stone for another whole sub-move). A destination column
+  // that's itself empty doesn't count - you're filling it, not routing
+  // through it.
+  function maxSupermove(destIsEmptyColumn) {
+    const freeCount = freeCells.filter(c => c === null).length;
+    const emptyCols = tableau.filter(c => c.length === 0).length - (destIsEmptyColumn ? 1 : 0);
+    return (freeCount + 1) * Math.pow(2, Math.max(0, emptyCols));
+  }
+
+  function getMovingCards(src) {
+    if (src.pile === 'freecell') return freeCells[src.index] ? [freeCells[src.index]] : null;
+    if (src.pile === 'foundation') {
+      const f = foundations[src.index];
+      return f.length ? [f[f.length - 1]] : null;
+    }
+    if (src.pile === 'tableau') {
+      const col = tableau[src.col];
+      if (src.idx == null || !col[src.idx]) return null;
+      if (!isValidRun(col, src.idx)) return null;
+      return col.slice(src.idx);
+    }
+    return null;
+  }
+
+  function canAccept(dst, card) {
+    if (dst.pile === 'foundation') {
+      const suit = FOUNDATION_SUITS[dst.index];
+      if (card.suit !== suit) return false;
+      const f = foundations[dst.index];
+      const top = f.length ? f[f.length - 1] : null;
+      return top ? card.value === top.value + 1 : card.value === 1;
+    }
+    if (dst.pile === 'freecell') {
+      return freeCells[dst.index] === null;
+    }
+    if (dst.pile === 'tableau') {
+      const col = tableau[dst.col];
+      if (!col.length) return true;
+      const top = col[col.length - 1];
+      return top.color !== card.color && top.value === card.value + 1;
+    }
+    return false;
+  }
+
+  function removeMovingCards(src, count) {
+    if (src.pile === 'freecell') { freeCells[src.index] = null; return; }
+    if (src.pile === 'foundation') { foundations[src.index].pop(); return; }
+    if (src.pile === 'tableau') {
+      const col = tableau[src.col];
+      col.splice(col.length - count, count);
+    }
+  }
+  function placeCards(dst, moving) {
+    if (dst.pile === 'foundation') { foundations[dst.index].push(moving[0]); return; }
+    if (dst.pile === 'freecell') { freeCells[dst.index] = moving[0]; return; }
+    if (dst.pile === 'tableau') { tableau[dst.col].push(...moving); return; }
+  }
+
+  function attemptMove(src, dst) {
+    const moving = getMovingCards(src);
+    if (!moving) return false;
+    if (moving.length > 1) {
+      if (dst.pile !== 'tableau') return false;
+      const destIsEmpty = tableau[dst.col].length === 0;
+      if (moving.length > maxSupermove(destIsEmpty)) return false;
+    }
+    if (!canAccept(dst, moving[0])) return false;
+    if (src.pile === dst.pile) {
+      if (src.pile === 'tableau' && src.col === dst.col) return false;
+      if (src.pile === 'foundation' && src.index === dst.index) return false;
+      if (src.pile === 'freecell' && src.index === dst.index) return false;
+    }
+    pushHistory();
+    removeMovingCards(src, moving.length);
+    placeCards(dst, moving);
+    moves++;
+    selected = null;
+    checkWin();
+    render();
+    return true;
+  }
+
+  function checkWin() {
+    const total = foundations.reduce((s, f) => s + f.length, 0);
+    if (total === 52) {
+      gameState = 'won';
+      showGameOver('won');
+    }
+  }
+
+  function cardsRemaining() { return 52 - foundations.reduce((s, f) => s + f.length, 0); }
+
+  function showGameOver(result) {
+    document.getElementById('gameover-title').textContent = result === 'won' ? 'You win!' : 'Game over';
+    document.getElementById('gameover-note').textContent = result === 'won'
+      ? 'Every card made it home.'
+      : 'You gave up this deal.';
+    document.getElementById('stat-final-undos').textContent = undos;
+    document.getElementById('stat-final-left').textContent = cardsRemaining();
+    openModal('modal-gameover');
+    render();
+  }
+
+  function requestGiveUp() {
+    if (gameState !== 'playing') return;
+    openModal('modal-giveup');
+  }
+
+  // ---- rendering ----
+  function cardEl(card) {
+    const div = document.createElement('div');
+    div.className = 'card' + (card.color === 'red' ? ' red' : '');
+    div.innerHTML =
+      `<span class="corner">${card.rank}<br>${card.suit}</span>` +
+      `<span class="pip">${card.suit}</span>` +
+      `<span class="corner bottom">${card.rank}<br>${card.suit}</span>`;
+    return div;
+  }
+
+  function render() {
+    document.getElementById('stat-moves').textContent = moves;
+    document.getElementById('stat-undos').textContent = undos;
+    document.getElementById('stat-left').textContent = cardsRemaining();
+    document.getElementById('btn-undo').disabled = !history.length || gameState !== 'playing';
+    document.getElementById('btn-giveup').disabled = gameState !== 'playing';
+
+    for (let i = 0; i < 4; i++) {
+      const el = document.getElementById('freecell-' + i);
+      el.innerHTML = '';
+      if (freeCells[i]) {
+        const cel = cardEl(freeCells[i]);
+        if (selected && selected.pile === 'freecell' && selected.index === i) cel.classList.add('selected');
+        el.appendChild(cel);
+      }
+    }
+
+    FOUNDATION_SUITS.forEach((suit, i) => {
+      const el = document.getElementById('foundation-' + i);
+      el.innerHTML = '';
+      const pile = foundations[i];
+      if (pile.length) {
+        const cel = cardEl(pile[pile.length - 1]);
+        if (selected && selected.pile === 'foundation' && selected.index === i) cel.classList.add('selected');
+        el.appendChild(cel);
+      } else {
+        const glyph = document.createElement('span');
+        glyph.className = 'foundation-glyph' + ((suit === '♥' || suit === '♦') ? ' red' : '');
+        glyph.textContent = suit;
+        el.appendChild(glyph);
+      }
+    });
+
+    tableau.forEach((col, ci) => {
+      const colEl = document.getElementById('col-' + ci);
+      colEl.innerHTML = '';
+      col.forEach((card, idx) => {
+        const el = cardEl(card);
+        el.style.top = `calc(var(--cascade-offset) * ${idx})`;
+        el.dataset.col = ci;
+        el.dataset.idx = idx;
+        if (selected && selected.pile === 'tableau' && selected.col === ci && idx >= selected.idx) {
+          el.classList.add('selected');
+        }
+        colEl.appendChild(el);
+      });
+    });
+  }
+
+  // ---- interaction ----
+  function resolveClickTarget(e) {
+    const pileEl = e.target.closest('[data-pile]');
+    if (!pileEl) return null;
+    const pile = pileEl.dataset.pile;
+    if (pile === 'tableau') {
+      const col = Number(pileEl.dataset.col);
+      const cardEl = e.target.closest('.card');
+      const idx = (cardEl && cardEl.closest('.column') === pileEl) ? Number(cardEl.dataset.idx) : null;
+      return { pile: 'tableau', col, idx };
+    }
+    if (pile === 'foundation') return { pile: 'foundation', index: Number(pileEl.dataset.index) };
+    if (pile === 'freecell') return { pile: 'freecell', index: Number(pileEl.dataset.index) };
+    return null;
+  }
+
+  function sameTarget(a, b) {
+    if (a.pile !== b.pile) return false;
+    if (a.pile === 'tableau') return a.col === b.col && a.idx === b.idx;
+    if (a.pile === 'foundation') return a.index === b.index;
+    if (a.pile === 'freecell') return a.index === b.index;
+    return true;
+  }
+
+  function trySelect(target) {
+    selected = null;
+    if (target.pile === 'freecell') {
+      if (freeCells[target.index]) selected = { pile: 'freecell', index: target.index };
+    } else if (target.pile === 'foundation') {
+      if (foundations[target.index].length) selected = { pile: 'foundation', index: target.index };
+    } else if (target.pile === 'tableau') {
+      const col = tableau[target.col];
+      const idx = target.idx;
+      if (idx != null && col[idx] && isValidRun(col, idx)) {
+        selected = { pile: 'tableau', col: target.col, idx };
+      }
+    }
+    render();
+  }
+
+  function handlePileClick(target) {
+    if (!selected) { trySelect(target); return; }
+    if (sameTarget(selected, target)) { selected = null; render(); return; }
+    if (selected.pile === 'tableau' && target.pile === 'tableau' && selected.col === target.col) {
+      trySelect(target);
+      return;
+    }
+    if (!attemptMove(selected, target)) {
+      selected = null;
+      trySelect(target);
+    }
+  }
+
+  document.querySelector('.table').addEventListener('click', (e) => {
+    const target = resolveClickTarget(e);
+    if (!target) return;
+    handlePileClick(target);
+  });
+
+  function anyModalOpen() {
+    return Array.from(document.querySelectorAll('.modal-overlay')).some(m => !m.hidden);
+  }
+  function openModal(id) { document.getElementById(id).hidden = false; }
+  function closeModal(id) { document.getElementById(id).hidden = true; }
+
+  function requestNewGame() {
+    if (gameUnderway()) openModal('modal-confirm');
+    else newGame();
+  }
+  document.getElementById('btn-newgame').addEventListener('click', requestNewGame);
+  document.getElementById('confirm-cancel').addEventListener('click', () => closeModal('modal-confirm'));
+  document.getElementById('confirm-yes').addEventListener('click', () => {
+    closeModal('modal-confirm');
+    newGame();
+  });
+
+  document.getElementById('btn-undo').addEventListener('click', undo);
+
+  document.getElementById('btn-giveup').addEventListener('click', requestGiveUp);
+  document.getElementById('giveup-cancel').addEventListener('click', () => closeModal('modal-giveup'));
+  document.getElementById('giveup-yes').addEventListener('click', () => {
+    closeModal('modal-giveup');
+    gameState = 'gaveup';
+    showGameOver('gaveup');
+  });
+  document.getElementById('gameover-newgame').addEventListener('click', () => {
+    closeModal('modal-gameover');
+    newGame();
+  });
+
+  document.getElementById('btn-help').addEventListener('click', () => openModal('modal-help'));
+  document.getElementById('help-close').addEventListener('click', () => closeModal('modal-help'));
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+      if (e.target !== overlay) return;
+      if (overlay.id === 'modal-help' || overlay.id === 'modal-gameover') overlay.hidden = true;
+    });
+  });
+
+  function requestLeave() {
+    if (gameUnderway()) openModal('modal-leave');
+    else window.location.href = '../index.html';
+  }
+  document.getElementById('leave-cancel').addEventListener('click', () => closeModal('modal-leave'));
+  document.getElementById('leave-yes').addEventListener('click', () => { window.location.href = '../index.html'; });
+
+  // Only modal-help/modal-confirm/modal-leave/modal-giveup hold Escape and
+  // Backspace/B back - modal-gameover is an automatic end-of-deal screen and
+  // shouldn't block either shortcut.
+  function blockingModalOpen() {
+    return !document.getElementById('modal-help').hidden
+      || !document.getElementById('modal-confirm').hidden
+      || !document.getElementById('modal-leave').hidden
+      || !document.getElementById('modal-giveup').hidden;
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === 'Escape') {
+      if (anyModalOpen()) {
+        document.querySelectorAll('.modal-overlay').forEach(m => { m.hidden = true; });
+      } else if (selected) {
+        selected = null;
+        render();
+      } else {
+        requestNewGame();
+      }
+    } else if (e.key === 'u' || e.key === 'U') {
+      if (blockingModalOpen()) return;
+      e.preventDefault();
+      undo();
+    } else if (e.key === 'Backspace' || e.key === 'b' || e.key === 'B') {
+      if (blockingModalOpen()) return;
+      e.preventDefault();
+      requestLeave();
+    }
+  });
+
+  newGame();
+})();
+</script>
