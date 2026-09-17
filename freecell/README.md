@@ -51,6 +51,15 @@ Unlike Klondike, "New game" has no draw-mode picker to choose from — there's
 only one way to deal FreeCell, so it goes straight from the confirmation (if
 needed) to a fresh shuffle, the same way Hearts' "New game" does.
 
+## Keyboard cursor
+
+Identical mechanism to Klondike (see its README for the full writeup): a
+cursor lives in either the free cells/foundations row or the tableau, each
+remembering its own last position; **&larr;**/**&rarr;** move within the
+current row, **&uarr;**/**&darr;** switch rows, and **Space** does exactly
+what a click at the cursor would do — including triggering a supermove if
+the cursor's sitting on a multi-card run and there's room for it.
+
 ## End of hand
 
 Winning (all 52 cards on the foundations) or giving up both open the same
@@ -72,7 +81,5 @@ a ~1450px-wide desktop window with no horizontal overflow at either end.
 ## Known intentional non-features
 
 - No double-click/tap "auto-send to foundation" shortcut.
-- No keyboard cursor for picking cards — only U (undo), Escape, and
-  Backspace/B are wired up.
 - No alternate rule variants (fewer free cells, 10-column deals, etc.) —
   just the standard 4-cell, 8-column game.

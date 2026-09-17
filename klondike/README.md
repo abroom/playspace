@@ -60,6 +60,19 @@ Both click/tap and drag-and-drop work, sharing one underlying model:
 - All custom keyboard shortcuts ignore Cmd/Ctrl/Alt combinations, so browser
   shortcuts still work normally.
 
+## Keyboard cursor
+
+A cursor lives in one of two rows — the stock/waste/foundations strip, or
+the tableau — each remembering its own last position independently when you
+switch away and back (`TOP_ROW` array + `topRowIdx`/`tableauCol`, the same
+"return to where you were" convention Skyscraper Farm uses for its tower and
+crate rows). **&larr;**/**&rarr;** move within the current row; **&uarr;**
+switches to the top row, **&darr;** back to the tableau. Landing on a
+tableau column always puts the cursor at the start of the maximal valid run
+sitting at its top (`topRunStart()`), so **Space** — which does exactly what
+a click at the cursor would do, via the same `handlePileClick()` — always
+grabs (or drops) the biggest run that's actually there.
+
 ## End of hand
 
 Winning (all 52 cards on the foundations) or giving up both open the same
@@ -87,7 +100,5 @@ horizontal overflow at either end.
 - No double-click/tap "auto-send to foundation" shortcut — every foundation
   move is still just as reachable via the normal pick-up/click-destination
   flow, this just skips the extra convenience of auto-detecting it.
-- No keyboard cursor for picking cards (unlike Hearts' arrow-key hand
-  cursor) — only U (undo), Escape, and Backspace/B are wired up.
 - No redeal limit and no scoring system (Vegas or standard) — redeals are
   unlimited and the only counters are moves, undos, and cards remaining.

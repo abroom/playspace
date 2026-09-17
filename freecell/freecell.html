@@ -152,6 +152,7 @@
   .drag-ghost .card { position: absolute; box-shadow: 0 10px 22px rgba(0,0,0,0.45); }
   [data-pile].drag-over-valid { outline: 3px solid var(--accent); outline-offset: 2px; }
   [data-pile].drag-over-invalid { outline: 3px solid var(--card-red); outline-offset: 2px; }
+  .pile.cursor, .column.cursor, .card.cursor { outline: 2px dashed var(--accent); outline-offset: 3px; }
 
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(18,17,14,0.55);
@@ -336,6 +337,17 @@
 
   let freeCells, foundations, tableau;
   let history, moves, undos, selected, gameState;
+  // Keyboard: cursor lives in one of two rows (the free cells/foundations
+  // strip, or the tableau), each remembering its own last position
+  // independently - same "return to where you were" convention Skyscraper
+  // Farm uses for its tower/crate rows.
+  const TOP_ROW = [
+    { pile: 'freecell', index: 0 }, { pile: 'freecell', index: 1 },
+    { pile: 'freecell', index: 2 }, { pile: 'freecell', index: 3 },
+    { pile: 'foundation', index: 0 }, { pile: 'foundation', index: 1 },
+    { pile: 'foundation', index: 2 }, { pile: 'foundation', index: 3 },
+  ];
+  let cursorRow = 'tableau', topRowIdx = 0, tableauCol = 0;
 
   function newGame() {
     const deck = shuffle(makeDeck());
@@ -348,6 +360,9 @@
     undos = 0;
     selected = null;
     gameState = 'playing';
+    cursorRow = 'tableau';
+    topRowIdx = 0;
+    tableauCol = 0;
     document.querySelectorAll('.modal-overlay').forEach(m => { m.hidden = true; });
     render();
   }
@@ -374,6 +389,25 @@
       if (upper.value !== lower.value - 1) return false;
     }
     return true;
+  }
+
+  // Where the keyboard cursor lands in a column: the start of the maximal
+  // valid run sitting at the top, so Space always grabs the biggest run
+  // that's actually there instead of requiring a specific card to be picked.
+  function topRunStart(col) {
+    if (!col.length) return null;
+    let idx = col.length - 1;
+    while (idx > 0) {
+      const upper = col[idx], lower = col[idx - 1];
+      if (upper.color !== lower.color && upper.value === lower.value - 1) idx--;
+      else break;
+    }
+    return idx;
+  }
+
+  function currentCursorTarget() {
+    if (cursorRow === 'top') return TOP_ROW[topRowIdx];
+    return { pile: 'tableau', col: tableauCol, idx: topRunStart(tableau[tableauCol]) };
   }
 
   // Classic FreeCell "supermove" capacity: each empty free cell or empty
@@ -511,9 +545,18 @@
     document.getElementById('btn-undo').disabled = !history.length || gameState !== 'playing';
     document.getElementById('btn-giveup').disabled = gameState !== 'playing';
 
+    const cursorTarget = currentCursorTarget();
+    function isCursorOn(pile, extra) {
+      if (cursorTarget.pile !== pile) return false;
+      if (pile === 'foundation' || pile === 'freecell') return cursorTarget.index === extra;
+      if (pile === 'tableau') return cursorTarget.col === extra;
+      return true;
+    }
+
     for (let i = 0; i < 4; i++) {
       const el = document.getElementById('freecell-' + i);
       el.innerHTML = '';
+      el.classList.toggle('cursor', isCursorOn('freecell', i));
       if (freeCells[i]) {
         const cel = cardEl(freeCells[i]);
         if (selected && selected.pile === 'freecell' && selected.index === i) cel.classList.add('selected');
@@ -524,6 +567,7 @@
     FOUNDATION_SUITS.forEach((suit, i) => {
       const el = document.getElementById('foundation-' + i);
       el.innerHTML = '';
+      el.classList.toggle('cursor', isCursorOn('foundation', i));
       const pile = foundations[i];
       if (pile.length) {
         const cel = cardEl(pile[pile.length - 1]);
@@ -540,6 +584,7 @@
     tableau.forEach((col, ci) => {
       const colEl = document.getElementById('col-' + ci);
       colEl.innerHTML = '';
+      colEl.classList.toggle('cursor', isCursorOn('tableau', ci) && !col.length);
       col.forEach((card, idx) => {
         const el = cardEl(card);
         el.style.top = `calc(var(--cascade-offset) * ${idx})`;
@@ -547,6 +592,9 @@
         el.dataset.idx = idx;
         if (selected && selected.pile === 'tableau' && selected.col === ci && idx >= selected.idx) {
           el.classList.add('selected');
+        }
+        if (isCursorOn('tableau', ci) && idx === cursorTarget.idx) {
+          el.classList.add('cursor');
         }
         colEl.appendChild(el);
       });
@@ -815,6 +863,32 @@
       if (blockingModalOpen()) return;
       e.preventDefault();
       requestLeave();
+    } else if (e.key === 'ArrowLeft') {
+      if (blockingModalOpen()) return;
+      e.preventDefault();
+      if (cursorRow === 'top') topRowIdx = Math.max(0, topRowIdx - 1);
+      else tableauCol = Math.max(0, tableauCol - 1);
+      render();
+    } else if (e.key === 'ArrowRight') {
+      if (blockingModalOpen()) return;
+      e.preventDefault();
+      if (cursorRow === 'top') topRowIdx = Math.min(TOP_ROW.length - 1, topRowIdx + 1);
+      else tableauCol = Math.min(tableau.length - 1, tableauCol + 1);
+      render();
+    } else if (e.key === 'ArrowUp') {
+      if (blockingModalOpen()) return;
+      e.preventDefault();
+      cursorRow = 'top';
+      render();
+    } else if (e.key === 'ArrowDown') {
+      if (blockingModalOpen()) return;
+      e.preventDefault();
+      cursorRow = 'tableau';
+      render();
+    } else if (e.key === ' ') {
+      if (blockingModalOpen()) return;
+      e.preventDefault();
+      handlePileClick(currentCursorTarget());
     }
   });
 
