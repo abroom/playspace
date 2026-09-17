@@ -243,7 +243,9 @@
         <li>All 52 cards deal face-up across 8 tableau columns &mdash; nothing is hidden.</li>
         <li>4 free cells each hold one card. 4 foundations build up by suit, Ace to King.</li>
         <li>Tableau columns build down in alternating colors. Unlike Klondike, <strong>any</strong> card can go on an empty column, not just a King.</li>
-        <li>Click a card to pick it up (or the whole run above it, if it's a valid alternating sequence), then click a destination pile. Click the same card again to put it back down.</li>
+        <li>Click, or press and drag, a card to pick it up (or the whole run above it, if it's a valid alternating sequence), then click/drop a destination pile. Click the same card again to put it back down.</li>
+        <li>Double-click a card to send it wherever it best fits: its foundation, then another legal tableau spot, then an empty free cell.</li>
+        <li>Arrow keys move a cursor between the free cells/foundations row and the tableau; <strong>Space</strong> does whatever a click at the cursor would.</li>
         <li>Moving several cards at once (a "supermove") is limited by how many free cells and empty columns you have: you can move (1 + empty free cells) &times; 2<sup>empty columns</sup> cards at a time (an empty destination column doesn't count toward its own capacity).</li>
         <li><strong>Undo</strong> any move, any number of times &mdash; each one is tallied. <strong>Give up</strong> any time to see how you did; either way, the final screen shows cards remaining and undos used.</li>
         <li>Keyboard: <strong>U</strong> undoes. <strong>Escape</strong> puts down a held card, or starts a new game if nothing's held (or closes whatever's open). <strong>Backspace</strong> or <strong>B</strong> goes back to the Playspace index.</li>
@@ -501,6 +503,27 @@
     return true;
   }
 
+  // Double-click a single card to send it wherever it best fits, in order:
+  // its own foundation, then any other legal tableau spot, then an empty
+  // free cell as a last resort. Doesn't apply to a card that's part of a
+  // bigger run (getMovingCards would return more than one card).
+  function tryAutoMove(src) {
+    const moving = getMovingCards(src);
+    if (!moving || moving.length !== 1) return false;
+    const card = moving[0];
+    const foundationIndex = FOUNDATION_SUITS.indexOf(card.suit);
+    if (attemptMove(src, { pile: 'foundation', index: foundationIndex })) return true;
+    for (let c = 0; c < tableau.length; c++) {
+      if (src.pile === 'tableau' && src.col === c) continue;
+      if (attemptMove(src, { pile: 'tableau', col: c })) return true;
+    }
+    for (let i = 0; i < freeCells.length; i++) {
+      if (src.pile === 'freecell' && src.index === i) continue;
+      if (attemptMove(src, { pile: 'freecell', index: i })) return true;
+    }
+    return false;
+  }
+
   function checkWin() {
     const total = foundations.reduce((s, f) => s + f.length, 0);
     if (total === 52) {
@@ -749,6 +772,16 @@
     if (!target) return;
     pointerDown = { x: e.clientX, y: e.clientY, target };
     dragging = false;
+  });
+
+  // The two clicks that make up a dblclick already ran through pointerup
+  // above (pick up, then put back down since it's the same card) by the time
+  // this fires, so selected is back to null here regardless.
+  document.querySelector('.table').addEventListener('dblclick', (e) => {
+    const target = resolveTargetFromElement(e.target);
+    if (!target) return;
+    selected = null;
+    if (!tryAutoMove(target)) render();
   });
 
   document.addEventListener('pointermove', (e) => {

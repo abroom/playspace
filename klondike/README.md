@@ -95,10 +95,18 @@ separate `max-width: 560px` mobile override used to do here). Verified from
 a 320px-wide viewport up through a ~1450px-wide desktop window with no
 horizontal overflow at either end.
 
+## Double-click
+
+Double-clicking a single card (`tryAutoMove()`) sends it wherever it best
+fits: its own foundation first, or failing that any other legal tableau
+spot. Doesn't apply to a card that's part of a bigger run — only ever a
+single card. The two clicks that make up the double-click already ran
+through the normal tap handling by the time `dblclick` fires (pick the card
+up, then put it back down since it's the same card again), so this is a
+separate, independent action layered on top rather than a special case of
+the tap logic.
+
 ## Known intentional non-features
 
-- No double-click/tap "auto-send to foundation" shortcut — every foundation
-  move is still just as reachable via the normal pick-up/click-destination
-  flow, this just skips the extra convenience of auto-detecting it.
 - No redeal limit and no scoring system (Vegas or standard) — redeals are
   unlimited and the only counters are moves, undos, and cards remaining.

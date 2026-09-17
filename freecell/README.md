@@ -78,8 +78,15 @@ small fixed card size. Verified from a 320px-wide viewport (8 columns are
 tighter than Klondike's 7, so the floor here is a touch smaller) up through
 a ~1450px-wide desktop window with no horizontal overflow at either end.
 
+## Double-click
+
+Double-clicking a single card (`tryAutoMove()`) sends it wherever it best
+fits, in order: its own foundation, then any other legal tableau spot, then
+an empty free cell as a last resort. Doesn't apply to a card that's part of
+a bigger run — only ever a single card. Identical implementation to
+Klondike (see its README for the full writeup).
+
 ## Known intentional non-features
 
-- No double-click/tap "auto-send to foundation" shortcut.
 - No alternate rule variants (fewer free cells, 10-column deals, etc.) —
   just the standard 4-cell, 8-column game.

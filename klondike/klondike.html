@@ -274,7 +274,9 @@
         <li>Draw 1 or Draw 3 cards from the stock into the waste &mdash; only the top waste card is playable.</li>
         <li>Build tableau columns down in alternating colors. An empty column only accepts a King (or a run starting with one).</li>
         <li>Build foundations up by suit, Ace to King.</li>
-        <li>Click a card to pick it up (or the whole run above it, if it's a valid alternating sequence), then click a destination pile. Click the same card again to put it back down.</li>
+        <li>Click, or press and drag, a card to pick it up (or the whole run above it, if it's a valid alternating sequence), then click/drop a destination pile. Click the same card again to put it back down.</li>
+        <li>Double-click a card to send it wherever it best fits: its foundation first, or another legal tableau spot if not.</li>
+        <li>Arrow keys move a cursor between the stock/waste/foundations row and the tableau; <strong>Space</strong> does whatever a click at the cursor would.</li>
         <li>When the stock runs out, click it to flip the waste back over and keep going &mdash; there's no limit on redeals.</li>
         <li><strong>Undo</strong> any move, any number of times &mdash; each one is tallied. <strong>Give up</strong> any time to see how you did; either way, the final screen shows cards remaining and undos used.</li>
         <li>Keyboard: <strong>U</strong> undoes. <strong>Escape</strong> puts down a held card, or opens the New game menu if nothing's held (or closes whatever's open). <strong>Backspace</strong> or <strong>B</strong> goes back to the Playspace index.</li>
@@ -540,6 +542,23 @@
     checkWin();
     render();
     return true;
+  }
+
+  // Double-click a single card to send it wherever it best fits: its own
+  // foundation first, or failing that any other legal tableau spot. Doesn't
+  // apply to a card that's part of a bigger run (getMovingCards would return
+  // more than one card), since there's no "obvious" single destination then.
+  function tryAutoMove(src) {
+    const moving = getMovingCards(src);
+    if (!moving || moving.length !== 1) return false;
+    const card = moving[0];
+    const foundationIndex = FOUNDATION_SUITS.indexOf(card.suit);
+    if (attemptMove(src, { pile: 'foundation', findex: foundationIndex })) return true;
+    for (let c = 0; c < tableau.length; c++) {
+      if (src.pile === 'tableau' && src.col === c) continue;
+      if (attemptMove(src, { pile: 'tableau', col: c })) return true;
+    }
+    return false;
   }
 
   function drawOrRecycle() {
@@ -833,6 +852,16 @@
     if (!target) return;
     pointerDown = { x: e.clientX, y: e.clientY, target };
     dragging = false;
+  });
+
+  // The two clicks that make up a dblclick already ran through pointerup
+  // above (pick up, then put back down since it's the same card) by the time
+  // this fires, so selected is back to null here regardless.
+  document.querySelector('.table').addEventListener('dblclick', (e) => {
+    const target = resolveTargetFromElement(e.target);
+    if (!target || target.pile === 'stock') return;
+    selected = null;
+    if (!tryAutoMove(target)) render();
   });
 
   document.addEventListener('pointermove', (e) => {
