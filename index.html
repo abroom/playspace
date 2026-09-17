@@ -122,6 +122,14 @@
           <span class="game-desc">Avoid the hearts and the Queen of Spades. Or take them all to shoot the moon.</span>
         </span>
       </a>
+
+      <a class="game-card" href="solitaire/solitaire.html">
+        <span class="game-icon">🃏</span>
+        <span class="game-body">
+          <span class="game-name">Solitaire</span>
+          <span class="game-desc">Classic Klondike — clear the deck onto four foundations, ace to king.</span>
+        </span>
+      </a>
     </div>
   </div>
 
@@ -143,7 +151,7 @@
       } else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
         e.preventDefault();
         focusCard(idx - 1);
-      } else if (/^[123]$/.test(e.key) && cards[Number(e.key) - 1]) {
+      } else if (/^[1234]$/.test(e.key) && cards[Number(e.key) - 1]) {
         e.preventDefault();
         window.location.href = cards[Number(e.key) - 1].getAttribute('href');
       }
