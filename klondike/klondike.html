@@ -626,7 +626,7 @@
     const remaining = cardsRemaining();
     document.getElementById('gameover-title').textContent = result === 'won' ? 'You win!' : 'Game over';
     document.getElementById('gameover-note').textContent = result === 'won'
-      ? (remaining === 0 ? 'Every card made it home.' : 'Nothing left to figure out. The rest is just moving cards home.')
+      ? (remaining === 0 ? 'Every card made it home.' : 'Every card is sorted and can move to home. Feel free to do that by closing this dialogue.')
       : 'You gave up this hand.';
     document.getElementById('stat-final-undos').textContent = undos;
     document.getElementById('stat-final-left').textContent = result === 'won' ? 0 : remaining;
