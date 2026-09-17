@@ -551,15 +551,57 @@
     }
   }
 
+  // Every FreeCell card is visible from the first deal, so unlike Klondike
+  // there's no "nothing hidden" signal to key off of - instead, simulate a
+  // simple greedy solve (repeatedly send any tableau/free-cell card that's
+  // exactly next-in-sequence for its suit) against a scratch copy of the
+  // board, without touching the real one. If that clears everything, the
+  // remaining cards are all "in order" and the win is recognized right here.
+  function wouldGreedyClear() {
+    const cols = tableau.map(col => col.slice());
+    const cells = freeCells.slice();
+    const tops = FOUNDATION_SUITS.map((_, i) => foundations[i].length);
+    let progress = true;
+    while (progress) {
+      progress = false;
+      for (const col of cols) {
+        if (!col.length) continue;
+        const card = col[col.length - 1];
+        const fi = FOUNDATION_SUITS.indexOf(card.suit);
+        if (card.value === tops[fi] + 1) { tops[fi]++; col.pop(); progress = true; }
+      }
+      for (let i = 0; i < cells.length; i++) {
+        const card = cells[i];
+        if (!card) continue;
+        const fi = FOUNDATION_SUITS.indexOf(card.suit);
+        if (card.value === tops[fi] + 1) { tops[fi]++; cells[i] = null; progress = true; }
+      }
+    }
+    return cols.every(c => c.length === 0);
+  }
+
+  // Checked at the end of every render(), so it fires the instant the board
+  // reaches this point, however it got there. Deliberately doesn't touch
+  // the board itself - the player can still finish moving cards home by
+  // hand if they want to see it through.
+  function checkEarlyWin() {
+    if (gameState !== 'playing') return;
+    if (wouldGreedyClear()) {
+      gameState = 'won';
+      showGameOver('won');
+    }
+  }
+
   function cardsRemaining() { return 52 - foundations.reduce((s, f) => s + f.length, 0); }
 
   function showGameOver(result) {
+    const remaining = cardsRemaining();
     document.getElementById('gameover-title').textContent = result === 'won' ? 'You win!' : 'Game over';
     document.getElementById('gameover-note').textContent = result === 'won'
-      ? 'Every card made it home.'
+      ? (remaining === 0 ? 'Every card made it home.' : 'Nothing left to figure out. The rest is just moving cards home.')
       : 'You gave up this deal.';
     document.getElementById('stat-final-undos').textContent = undos;
-    document.getElementById('stat-final-left').textContent = cardsRemaining();
+    document.getElementById('stat-final-left').textContent = result === 'won' ? 0 : remaining;
     openModal('modal-gameover');
     render();
   }
@@ -641,6 +683,8 @@
         colEl.appendChild(el);
       });
     });
+
+    checkEarlyWin();
   }
 
   // ---- interaction ----

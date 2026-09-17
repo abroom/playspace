@@ -234,7 +234,6 @@
       <button id="btn-newgame" class="primary">New game</button>
       <button id="btn-help">How to play</button>
       <button id="btn-undo">Undo</button>
-      <button id="btn-autosolve" title="Enabled once every card is face up and the stock is empty">Auto-solve</button>
       <button id="btn-giveup">Give up</button>
       <div class="stats-group">
         <span class="stat"><span class="stat-label">Moves</span><span class="stat-value" id="stat-moves">0</span></span>
@@ -277,8 +276,7 @@
         <li>Build foundations up by suit, Ace to King.</li>
         <li>Click, or press and drag, a card to pick it up (or the whole run above it, if it's a valid alternating sequence), then click/drop a destination pile. Click the same card again to put it back down.</li>
         <li>Double-click a card to send it wherever it best fits: its foundation first, or another legal tableau spot if not.</li>
-        <li>Any foundation slot accepts a drop — it's redirected to the one matching the card's suit automatically.</li>
-        <li>Once every card is face up and the stock is empty, the <strong>Auto-solve</strong> button lights up and finishes the hand for you.</li>
+        <li>Any foundation slot accepts a drop; it's redirected to the one matching the card's suit automatically.</li>
         <li>Arrow keys move a cursor between the stock/waste/foundations row and the tableau; <strong>Space</strong> does whatever a click at the cursor would.</li>
         <li>When the stock runs out, click it to flip the waste back over and keep going &mdash; there's no limit on redeals.</li>
         <li><strong>Undo</strong> any move, any number of times &mdash; each one is tallied. <strong>Give up</strong> any time to see how you did; either way, the final screen shows cards remaining and undos used.</li>
@@ -428,7 +426,6 @@
     cursorRow = 'tableau';
     topRowIdx = 0;
     tableauCol = 0;
-    if (autoSolveTimer) { clearInterval(autoSolveTimer); autoSolveTimer = null; }
     document.querySelectorAll('.modal-overlay').forEach(m => { m.hidden = true; });
     render();
   }
@@ -610,45 +607,29 @@
   function cardsRemaining() { return 52 - foundations.reduce((s, f) => s + f.length, 0); }
 
   // Once nothing is left face-down and there's nothing left to draw, every
-  // card is visible and free to move - the standard point at which digital
-  // Klondike offers to finish the hand for you. This is a greedy "send
-  // anything that can go" loop, not a full solver: it doesn't need to be,
-  // since by this point a win just falls out of repeatedly doing the only
-  // sensible thing.
-  function canAutoSolve() {
-    return gameState === 'playing' && stock.length === 0 && waste.length === 0
-      && tableau.every(col => col.every(c => c.faceUp));
-  }
-
-  function autoSolveStep() {
-    for (let c = 0; c < tableau.length; c++) {
-      const col = tableau[c];
-      if (!col.length) continue;
-      if (attemptMove({ pile: 'tableau', col: c, idx: col.length - 1 }, { pile: 'foundation', findex: 0 })) {
-        return true;
-      }
+  // card is visible and free to move, with no more decisions left to make -
+  // the same assumption every digital Klondike relies on to declare a win
+  // right here instead of making the player go through the motions of
+  // actually moving each card home. Checked at the end of every render(), so
+  // it fires the instant the board reaches this point, however it got
+  // there. Deliberately doesn't touch the board itself - the player can
+  // still finish moving cards home by hand if they want to see it through.
+  function checkEarlyWin() {
+    if (gameState !== 'playing') return;
+    if (stock.length === 0 && waste.length === 0 && tableau.every(col => col.every(c => c.faceUp))) {
+      gameState = 'won';
+      showGameOver('won');
     }
-    return false;
-  }
-
-  let autoSolveTimer = null;
-  function autoSolve() {
-    if (!canAutoSolve() || autoSolveTimer) return;
-    autoSolveTimer = setInterval(() => {
-      if (gameState !== 'playing' || !autoSolveStep()) {
-        clearInterval(autoSolveTimer);
-        autoSolveTimer = null;
-      }
-    }, 120);
   }
 
   function showGameOver(result) {
+    const remaining = cardsRemaining();
     document.getElementById('gameover-title').textContent = result === 'won' ? 'You win!' : 'Game over';
     document.getElementById('gameover-note').textContent = result === 'won'
-      ? 'Every card made it home.'
+      ? (remaining === 0 ? 'Every card made it home.' : 'Nothing left to figure out. The rest is just moving cards home.')
       : 'You gave up this hand.';
     document.getElementById('stat-final-undos').textContent = undos;
-    document.getElementById('stat-final-left').textContent = cardsRemaining();
+    document.getElementById('stat-final-left').textContent = result === 'won' ? 0 : remaining;
     openModal('modal-gameover');
     render();
   }
@@ -679,7 +660,6 @@
     document.getElementById('stat-undos').textContent = undos;
     document.getElementById('stat-left').textContent = cardsRemaining();
     document.getElementById('btn-undo').disabled = !history.length || gameState !== 'playing';
-    document.getElementById('btn-autosolve').disabled = !canAutoSolve();
     document.getElementById('btn-giveup').disabled = gameState !== 'playing';
 
     const cursorTarget = currentCursorTarget();
@@ -751,6 +731,8 @@
         colEl.appendChild(el);
       });
     });
+
+    checkEarlyWin();
   }
 
   // ---- interaction ----
@@ -987,7 +969,6 @@
   });
 
   document.getElementById('btn-undo').addEventListener('click', undo);
-  document.getElementById('btn-autosolve').addEventListener('click', autoSolve);
 
   document.getElementById('btn-giveup').addEventListener('click', requestGiveUp);
   document.getElementById('giveup-cancel').addEventListener('click', () => closeModal('modal-giveup'));
