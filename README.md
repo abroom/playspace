@@ -10,7 +10,7 @@ A personal scratch space for small side projects and misc notes.
   See its own README for details.
 - **[`hearts/`](hearts/)** — a single-file 4-player Hearts vs. 3 CPU
   opponents. See its own README for details.
-- **[`solitaire/`](solitaire/)** — a single-file classic Klondike Solitaire.
+- **[`klondike/`](klondike/)** — a single-file classic Klondike solitaire.
   See its own README for details.
 - **`notes/`** — miscellaneous design notes.
 

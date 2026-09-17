@@ -1,11 +1,11 @@
-# Solitaire
+# Klondike
 
-A single-file browser game. Open `solitaire.html` directly in a browser —
+A single-file browser game. Open `klondike.html` directly in a browser —
 no build step, no dependencies, no server required.
 
 ## Concept
 
-Classic Klondike. Seven tableau columns are dealt 1–7 cards deep, only the
+The classic solitaire. Seven tableau columns are dealt 1–7 cards deep, only the
 top of each face-up. Build tableau runs down in alternating colors (an empty
 column only accepts a King), and build the four foundations up by suit from
 Ace to King. Clear all 52 cards onto the foundations to win.
