@@ -59,16 +59,20 @@ Winning (all 52 cards on the foundations) or giving up both open the same
 shows **undos used** and **cards remaining** (0 on a genuine win) — the two
 numbers asked for regardless of how the hand ended.
 
-## Mobile
+## Responsive board (mobile and desktop)
 
 Card size, the tableau cascade offset, and the waste fan offset are all CSS
 custom properties (`--card-w`, `--card-h`, `--cascade-offset`,
-`--fan-offset`), redefined under `max-width: 560px` so the whole board
-(all 7 columns) reflows to a single set of smaller numbers instead of
-needing per-element breakpoint rules. Verified down to a 375px-wide
-viewport with no horizontal overflow; hasn't had the same multi-round
-mobile tuning pass the other games eventually got, so further breakpoints
-(landscape/short phones especially) may need follow-up if issues turn up.
+`--fan-offset`) computed from `.table`'s own width via a container query
+(`container-type: inline-size` on `.table`, `cqw`-based `clamp()` math on
+its two direct children `.row-top`/`.tableau` — has to live one level down,
+since an element can't be its own container-query reference). This means
+the board fills however wide the felt actually is on any screen size, from
+a small phone up to a wide desktop window, instead of sitting at one small
+fixed card size with a lot of unused felt around it (which is what a
+separate `max-width: 560px` mobile override used to do here). Verified from
+a 320px-wide viewport up through a ~1450px-wide desktop window with no
+horizontal overflow at either end.
 
 ## Known intentional non-features
 

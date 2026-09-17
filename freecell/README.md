@@ -56,17 +56,17 @@ Winning (all 52 cards on the foundations) or giving up both open the same
 "Game over" panel, just with a different heading and note. Either way it
 shows **undos used** and **cards remaining** (0 on a genuine win).
 
-## Mobile
+## Responsive board (mobile and desktop)
 
 Card size, tableau cascade offset, and the pile gap are all CSS custom
-properties (`--card-w`, `--card-h`, `--cascade-offset`, `--pile-gap`),
-redefined under `max-width: 560px` so all 8 columns reflow to a single set
-of smaller numbers instead of needing per-element breakpoint rules.
-Verified down to a 320px-wide viewport with no horizontal overflow — 8
-columns are tighter than Klondike's 7, so the mobile card size here is
-smaller. Hasn't had a multi-round mobile tuning pass, so further
-breakpoints (landscape/short phones especially) may need follow-up if
-issues turn up.
+properties (`--card-w`, `--card-h`, `--cascade-offset`, `--pile-gap`)
+computed from `.table`'s own width via a container query (same technique as
+Klondike: `container-type: inline-size` on `.table`, `cqw`-based `clamp()`
+math on its direct children `.row-top`/`.tableau`). The board fills however
+wide the felt actually is at any screen size instead of sitting at one
+small fixed card size. Verified from a 320px-wide viewport (8 columns are
+tighter than Klondike's 7, so the floor here is a touch smaller) up through
+a ~1450px-wide desktop window with no horizontal overflow at either end.
 
 ## Known intentional non-features
 

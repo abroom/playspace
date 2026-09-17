@@ -29,12 +29,6 @@
     --font-display: "Cormorant Garamond", ui-serif, Georgia, serif;
     --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
     --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-
-    --card-w: 76px;
-    --card-h: 106px;
-    --cascade-offset: 26px;
-    --fan-offset: 20px;
-    --pile-gap: 14px;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -53,13 +47,6 @@
     --felt: #133E3A; --felt-edge: #0C2A27;
     --card-bg: #F1ECE0; --card-ink: #221C14; --card-red: #B14038;
     --card-back-a: #2E5674; --card-back-b: #1E3A4E;
-  }
-
-  @media (max-width: 560px) {
-    :root {
-      --card-w: 36px; --card-h: 50px;
-      --cascade-offset: 13px; --fan-offset: 9px; --pile-gap: 4px;
-    }
   }
 
   * { box-sizing: border-box; }
@@ -108,6 +95,21 @@
   .table {
     background: var(--felt); border: 6px solid var(--felt-edge); border-radius: 14px;
     padding: 18px; box-shadow: inset 0 2px 6px var(--shadow);
+    container-type: inline-size;
+  }
+  /* container-type has to live on .table, not on these rules' own selector -
+     an element can't be its own container-query reference (cqw here would
+     resolve against the next ancestor container instead, which has none).
+     Scoping the responsive card size to .table's two direct children lets
+     the whole board (7 columns + the row above) grow to fill however wide
+     the felt actually is, instead of sitting at a small fixed size with a
+     lot of unused felt around it. */
+  .row-top, .tableau {
+    --pile-gap: clamp(4px, 1.6cqw, 14px);
+    --card-w: clamp(34px, calc((100cqw - 6 * var(--pile-gap)) / 7), 118px);
+    --card-h: calc(var(--card-w) * 1.395);
+    --cascade-offset: calc(var(--card-w) * 0.34);
+    --fan-offset: calc(var(--card-w) * 0.26);
   }
 
   .card {
