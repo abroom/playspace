@@ -254,6 +254,15 @@
       font-size: 15px; letter-spacing: 0.5px; padding: 3px 4px; min-width: 2.4ch;
     }
     .face-btn, .hint-btn, .pause-btn { font-size: 14px; padding: 4px 6px; }
+
+    /* Shrink cells so the board fits the play area's width instead of
+       scrolling sideways. 12px is .board's horizontal padding, and the extra
+       1px per column is the grid gap. Floored at 16px so cells stay
+       tappable - Big's 30 columns still scroll a little at that size. */
+    .board-wrap { container-type: inline-size; }
+    #board {
+      --cell-size: clamp(16px, calc((100cqw - 12px) / var(--cols) - 1px), 30px) !important;
+    }
   }
 
   /* Landscape/short phones: Medium's 16 rows at full cell size run past the
@@ -439,6 +448,7 @@
     const boardEl = document.getElementById('board');
     boardEl.dataset.size = sizeKey;
     boardEl.style.setProperty('--cell-size', size.cellSize + 'px');
+    boardEl.style.setProperty('--cols', size.cols);
 
     grid = [];
     for (let r = 0; r < size.rows; r++) {
