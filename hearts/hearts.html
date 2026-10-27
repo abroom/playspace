@@ -644,6 +644,36 @@
     }
   }
 
+  // The match in progress is kept in localStorage so a refresh, or leaving and
+  // coming back, picks up where it left off. render() saves, and every state
+  // change ends in a render(). CPU moves and the pause before a trick is swept
+  // run on timers, which don't survive a reload, so loadGame() restarts
+  // whichever one was pending. Storage can be unavailable (private windows,
+  // blocked site data) - then the match just isn't remembered.
+  const STORAGE_KEY = 'playspace:hearts';
+  function saveGame() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        players, handNumber, passDirection, phase, selectedForPass, pendingPasses,
+        trick, ledSuit, trickLeader, turn, heartsBroken, tricksPlayed, moonShooter,
+        resolvingTrick, handCursor, focusArea,
+      }));
+    } catch (e) { /* not remembered */ }
+  }
+  function loadGame() {
+    let saved;
+    try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (e) { return false; }
+    if (!saved || !Array.isArray(saved.players) || saved.players.length !== 4 || !Array.isArray(saved.trick)
+      || !['passing', 'playing', 'hand-over', 'game-over'].includes(saved.phase)) return false;
+    ({ players, handNumber, passDirection, phase, selectedForPass, pendingPasses,
+       trick, ledSuit, trickLeader, turn, heartsBroken, tricksPlayed, moonShooter,
+       resolvingTrick, handCursor, focusArea } = saved);
+    render();
+    if (resolvingTrick) cpuTimer = setTimeout(resolveTrick, 1000);
+    else maybeAdvanceCPU();
+    return true;
+  }
+
   // ---- AI ----
   function dangerScore(c) {
     if (isQueenSpades(c)) return 1000;
@@ -791,6 +821,7 @@
     // hand-over modal
     if (phase === 'hand-over') renderHandOver();
     if (phase === 'game-over') renderGameOver();
+    saveGame();
   }
 
   function renderHandOver() {
@@ -1025,6 +1056,6 @@
     }
   });
 
-  newMatch();
+  if (!loadGame()) newMatch();
 })();
 </script>

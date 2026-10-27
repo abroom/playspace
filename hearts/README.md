@@ -122,6 +122,12 @@ selection toggle the way there is for playing a card onto the table. Shares
 the `pointerdown`/`pointermove`/`pointerup` pattern (and the
 pointercancel/visibilitychange/blur cleanup) the other card games use.
 
+## Saved game
+
+The match in progress is saved to `localStorage` (`playspace:hearts`) on
+every `render()`, so a refresh or back/forward picks up where it left off -
+including restarting a pending CPU move or trick sweep (`loadGame`).
+
 ## Known intentional non-features
 
 - No adjustable CPU difficulty or lookahead — heuristics only.
