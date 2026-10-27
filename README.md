@@ -21,3 +21,7 @@ Its game list is keyboard-navigable: **↑/↓** or **W/S** move between cards
 (Enter opens the focused one, native `<a>` behavior), and **1**–**5** jump
 straight to a game (by that alphabetical position). Each game itself has
 **Backspace**/**B** to come back here.
+
+The black square at the top right of `index.html` blanks the screen: it
+covers the page in black and goes browser-fullscreen where supported. Any
+click or key brings the page back.
