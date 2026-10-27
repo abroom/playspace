@@ -370,6 +370,34 @@
     render();
   }
 
+  // The game in progress is kept in localStorage so a refresh, or leaving and
+  // coming back, picks up where it left off. render() saves at the end, which
+  // covers every move, undo and end of game. Storage can be unavailable
+  // (private windows, blocked site data) - then the game just isn't remembered.
+  const STORAGE_KEY = 'playspace:freecell';
+  function saveGame() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        freeCells, foundations, tableau, history, moves, undos, gameState,
+        cursorRow, topRowIdx, tableauCol,
+      }));
+    } catch (e) { /* not remembered */ }
+  }
+  function loadGame() {
+    let saved;
+    try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (e) { return false; }
+    if (!saved || !Array.isArray(saved.tableau) || saved.tableau.length !== COLS
+      || !Array.isArray(saved.freeCells) || !Array.isArray(saved.foundations)) return false;
+    ({ freeCells, foundations, tableau, history, moves, undos, gameState,
+       cursorRow, topRowIdx, tableauCol } = saved);
+    selected = null;
+    // A finished deal has no other on-screen sign that it's over, so the
+    // end-of-game panel comes back too (showGameOver renders).
+    if (gameState === 'playing') render();
+    else showGameOver(gameState === 'won' ? 'won' : 'gaveup');
+    return true;
+  }
+
   function snapshot() {
     return JSON.stringify({ freeCells, foundations, tableau, moves });
   }
@@ -685,6 +713,7 @@
     });
 
     checkEarlyWin();
+    saveGame();
   }
 
   // ---- interaction ----
@@ -990,6 +1019,6 @@
     }
   });
 
-  newGame();
+  if (!loadGame()) newGame();
 })();
 </script>

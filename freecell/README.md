@@ -36,6 +36,9 @@ drag/ghost/cleanup writeup, identical implementation here):
 - **Undo** any move, any number of times. Same whole-state-snapshot
   approach as Klondike (`snapshot()`/`pushHistory()`, `JSON.stringify` of
   `{freeCells, foundations, tableau, moves}`).
+- The deal in progress (undo history included) is saved to `localStorage`
+  after every render, so a refresh or coming back later picks up where you
+  left off.
 - **Give up** ends the current deal (with a confirmation first) and shows
   the same end-of-game screen a win does, just with a different heading.
 - **Escape** puts down a card you're holding, if any; otherwise it starts a
