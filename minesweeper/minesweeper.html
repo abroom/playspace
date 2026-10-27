@@ -309,7 +309,7 @@
         <span class="lcd" id="mine-count">010</span>
         <button class="face-btn" id="btn-face" aria-label="Restart (same size)" title="Restart (same size)">🙂</button>
         <span class="lcd lcd-hints" id="hint-count" title="Hints used">000</span>
-        <button class="hint-btn" id="btn-hint" aria-label="Hint" title="Hint (H): reveal a random safe square">💡</button>
+        <button class="hint-btn" id="btn-hint" aria-label="Hint" title="Hint (H): reveal safe squares">💡</button>
         <span class="lcd lcd-continues" id="continue-count" title="Continues used">000</span>
         <button class="pause-btn" id="btn-pause" aria-label="Pause" title="Pause (P)">⏱️</button>
         <span class="lcd lcd-timer" id="timer">000</span>
@@ -345,7 +345,7 @@
         <li>Reveal a mine and it's game over: the one you hit turns red, mines you'd flagged correctly turn green, and flags you got wrong turn yellow.</li>
         <li>Right-click a hidden square to cycle it: blank → 🚩 flagged → ❓ unsure → blank.</li>
         <li>Clear every square that isn't a mine to win.</li>
-        <li>The 💡 button (or <strong>H</strong>) reveals a random safe square for you. It's disabled once the game is over or paused. Hints used are tallied in the yellow counter, continues in the blue one.</li>
+        <li>The 💡 button (or <strong>H</strong>) reveals a random safe square for you (3 on Medium, 5 on Big), next to what you've already uncovered where it can. It's disabled once the game is over or paused. Hints used are tallied in the yellow counter, continues in the blue one.</li>
         <li>Hit a mine and only that square reveals — the rest stay hidden. You can then <strong>Reveal</strong> (or <strong>V</strong>) to see every mine and flag, or <strong>Continue</strong> (or <strong>C</strong>) to turn the mine you hit into a flag and keep playing.</li>
         <li>The ⏱️ button (or <strong>P</strong>) pauses the timer and blurs the field so you can step away without giving anything up.</li>
         <li>Keyboard: arrows or WASD move the cursor, <strong>Space</strong> reveals, <strong>F</strong> cycles flag/unsure, <strong>R</strong> restarts the same size.</li>
@@ -412,9 +412,9 @@
 <script>
 (function () {
   const SIZES = {
-    small:  { rows: 9,  cols: 9,  mines: 10, cellSize: 30 },
-    medium: { rows: 16, cols: 16, mines: 40, cellSize: 26 },
-    big:    { rows: 16, cols: 30, mines: 99, cellSize: 22 },
+    small:  { rows: 9,  cols: 9,  mines: 10, cellSize: 30, hintSquares: 1 },
+    medium: { rows: 16, cols: 16, mines: 40, cellSize: 26, hintSquares: 3 },
+    big:    { rows: 16, cols: 30, mines: 99, cellSize: 22, hintSquares: 5 },
   };
 
   let size, grid, gameState, minesPlaced, flagsPlaced, revealedCount;
@@ -622,33 +622,46 @@
     render();
   }
 
-  // Reveals a random hidden, unflagged, non-mine square on the player's
-  // behalf. Before mines are placed this just picks any hidden square and
-  // reveals it normally - reveal() itself guarantees that first square is
-  // safe, so no special-casing is needed here.
+  // Reveals random hidden, unflagged, non-mine squares on the player's
+  // behalf - one per hint on Small, more on bigger boards (size.hintSquares).
+  // Before mines are placed the first pick is just any hidden square, revealed
+  // normally - reveal() itself guarantees that first square is safe, so no
+  // special-casing is needed here.
   function useHint() {
     if (gameState === 'won' || gameState === 'lost' || paused) return;
-    const candidates = [];
-    const frontier = [];
+    let revealedAny = false;
+    for (let i = 0; i < size.hintSquares; i++) {
+      const pick = pickHintSquare();
+      if (!pick) break;
+      reveal(pick[0], pick[1]);
+      revealedAny = true;
+      if (gameState === 'won') break;
+    }
+    if (!revealedAny) return;
+    hintsUsed++;
+    updateStatsDisplay();
+  }
+
+  // Prefers a square sharing an edge with the revealed/flagged area, then one
+  // only touching it diagonally, then a blind pick elsewhere on the board -
+  // the closer it sits to what's known, the more it reads like a real hint.
+  function pickHintSquare() {
+    const tiers = [[], [], []];
     for (let r = 0; r < size.rows; r++) for (let c = 0; c < size.cols; c++) {
       const cell = grid[r][c];
       if (cell.revealed || cell.state !== 'blank') continue;
       if (minesPlaced && cell.mine) continue;
-      candidates.push([r, c]);
-      // Prefer a square touching the revealed/flagged area over a blind pick
-      // elsewhere on the board - it reads more like a genuine hint.
-      const onFrontier = neighbors(r, c).some(([nr, nc]) => {
+      let tier = 2;
+      for (const [nr, nc] of neighbors(r, c)) {
         const n = grid[nr][nc];
-        return n.revealed || n.state === 'flag';
-      });
-      if (onFrontier) frontier.push([r, c]);
+        if (!n.revealed && n.state !== 'flag') continue;
+        if (nr === r || nc === c) { tier = 0; break; }
+        tier = 1;
+      }
+      tiers[tier].push([r, c]);
     }
-    const pool = frontier.length ? frontier : candidates;
-    if (!pool.length) return;
-    const [r, c] = pool[randInt(pool.length)];
-    hintsUsed++;
-    reveal(r, c);
-    updateStatsDisplay();
+    const pool = tiers.find(t => t.length);
+    return pool ? pool[randInt(pool.length)] : null;
   }
 
   function updateHintButton() {
