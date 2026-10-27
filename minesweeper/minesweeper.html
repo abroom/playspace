@@ -137,7 +137,10 @@
   }
   .pause-btn.active { background: var(--accent); color: var(--accent-ink); }
 
-  .board-wrap { position: relative; overflow-x: auto; padding: 4px; }
+  .board-wrap {
+    position: relative; overflow-x: auto; padding: 4px;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+  }
   .board {
     display: grid; gap: 1px; width: max-content; margin: 0 auto;
     background: var(--border); padding: 6px; border-radius: 4px;
@@ -156,7 +159,7 @@
     width: var(--cell-size); height: var(--cell-size);
     display: flex; align-items: center; justify-content: center;
     font-weight: 700; font-size: calc(var(--cell-size) * 0.5);
-    user-select: none; cursor: pointer; position: relative;
+    cursor: pointer; position: relative;
   }
   .cell.hidden {
     background: var(--panel);
