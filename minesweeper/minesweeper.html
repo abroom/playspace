@@ -445,6 +445,11 @@
   function newGame(sizeKey) {
     currentSize = sizeKey;
     size = SIZES[sizeKey];
+    // On phones, stand Big on its side (16 wide x 30 tall) so it fits the
+    // screen width and scrolls down rather than sideways.
+    if (sizeKey === 'big' && window.matchMedia('(max-width: 560px)').matches) {
+      size = { ...size, rows: size.cols, cols: size.rows };
+    }
     const boardEl = document.getElementById('board');
     boardEl.dataset.size = sizeKey;
     boardEl.style.setProperty('--cell-size', size.cellSize + 'px');
