@@ -450,10 +450,7 @@
     if (sizeKey === 'big' && window.matchMedia('(max-width: 560px)').matches) {
       size = { ...size, rows: size.cols, cols: size.rows };
     }
-    const boardEl = document.getElementById('board');
-    boardEl.dataset.size = sizeKey;
-    boardEl.style.setProperty('--cell-size', size.cellSize + 'px');
-    boardEl.style.setProperty('--cols', size.cols);
+    applyBoardSize();
 
     grid = [];
     for (let r = 0; r < size.rows; r++) {
@@ -486,6 +483,49 @@
     render();
   }
 
+  function applyBoardSize() {
+    const boardEl = document.getElementById('board');
+    boardEl.dataset.size = currentSize;
+    boardEl.style.setProperty('--cell-size', size.cellSize + 'px');
+    boardEl.style.setProperty('--cols', size.cols);
+  }
+
+  // The game in progress is kept in localStorage so a refresh, or leaving and
+  // coming back, picks up where it left off. render() and the timer tick both
+  // save, which covers every move. Storage can be unavailable (private
+  // windows, blocked site data) - then the game just isn't remembered.
+  const STORAGE_KEY = 'playspace:minesweeper';
+  function saveGame() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        currentSize, size, grid, gameState, minesPlaced, flagsPlaced, revealedCount,
+        hintsUsed, continuesUsed, boardRevealed, timerSeconds, paused, cursor,
+      }));
+    } catch (e) { /* not remembered */ }
+  }
+  function loadGame() {
+    let saved;
+    try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (e) { return false; }
+    if (!saved || !SIZES[saved.currentSize] || !Array.isArray(saved.grid)) return false;
+    ({ currentSize, size, grid, gameState, minesPlaced, flagsPlaced, revealedCount,
+       hintsUsed, continuesUsed, boardRevealed, timerSeconds, paused, cursor } = saved);
+    pausedByMenu = false;
+    applyBoardSize();
+    updateTimerDisplay();
+    updateMineCounter();
+    updateStatsDisplay();
+    updateHintButton();
+    updatePauseButton();
+    updatePauseUI();
+    setFace(gameState === 'won' ? '😎' : gameState === 'lost' ? '😵' : '🙂');
+    document.getElementById('win-banner').hidden = gameState !== 'won';
+    document.getElementById('lose-banner').hidden = gameState !== 'lost';
+    document.getElementById('btn-reveal').disabled = boardRevealed;
+    if (gameState === 'playing' && !paused) startTimer();
+    render();
+    return true;
+  }
+
   function placeMines(safeR, safeC) {
     const safe = new Set([`${safeR},${safeC}`, ...neighbors(safeR, safeC).map(([r, c]) => `${r},${c}`)]);
     let placed = 0;
@@ -507,6 +547,7 @@
     timerHandle = setInterval(() => {
       timerSeconds = Math.min(999, timerSeconds + 1);
       updateTimerDisplay();
+      saveGame();
     }, 1000);
   }
   function stopTimer() { clearInterval(timerHandle); timerHandle = null; }
@@ -697,6 +738,7 @@
     btn.title = paused ? 'Resume (P)' : 'Pause (P)';
     btn.setAttribute('aria-label', paused ? 'Resume' : 'Pause');
     updateHintButton();
+    saveGame();
   }
 
   function updateStatsDisplay() {
@@ -756,6 +798,7 @@
         board.appendChild(div);
       }
     }
+    saveGame();
   }
 
   function moveCursor(dr, dc) {
@@ -892,6 +935,6 @@
     requestLeave();
   });
 
-  newGame('small');
+  if (!loadGame()) newGame('small');
 })();
 </script>
