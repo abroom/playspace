@@ -49,6 +49,8 @@ Both click/tap and drag-and-drop work, sharing one underlying model:
   Skyscraper Farm's undo (`snapshot()`/`pushHistory()`, `JSON.stringify` of
   `{stock, waste, foundations, tableau, moves}`), which is simpler and far
   less bug-prone here than hand-writing an inverse for every move type.
+- The hand in progress (undo history included) is saved to localStorage
+  (`playspace:klondike`), so a refresh or leaving and coming back resumes it.
 - **Give up** ends the current hand (with a confirmation first) and shows
   the same end-of-game screen a win does, just with a different heading.
 - **Escape** puts down a card you're holding, if any; otherwise it opens the

@@ -733,6 +733,40 @@
     });
 
     checkEarlyWin();
+    saveGame();
+  }
+
+  // The hand in progress is kept in localStorage so a refresh, or leaving and
+  // coming back, picks up where it left off. Every state change ends in
+  // render(), which saves, so that covers every move. A held card, a drag in
+  // progress and open dialogs aren't kept. Storage can be unavailable (private
+  // windows, blocked site data) - then the hand just isn't remembered.
+  const STORAGE_KEY = 'playspace:klondike';
+  function saveGame() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        drawCount, stock, waste, foundations, tableau, history, moves, undos, gameState,
+        cursorRow, topRowIdx, tableauCol,
+      }));
+    } catch (e) { /* not remembered */ }
+  }
+  function loadGame() {
+    let saved;
+    try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (e) { return false; }
+    if (!saved || (saved.drawCount !== 1 && saved.drawCount !== 3)) return false;
+    if (!Array.isArray(saved.tableau) || saved.tableau.length !== 7) return false;
+    if (!Array.isArray(saved.foundations) || saved.foundations.length !== 4) return false;
+    ({ drawCount, stock, waste, foundations, tableau, history, moves, undos, gameState,
+       cursorRow, topRowIdx, tableauCol } = saved);
+    selected = null;
+    // A finished hand comes back with its end-of-hand panel, except an early
+    // win that still has cards in the tableau: the player closed the panel to
+    // move them home by hand, so let them carry on (checkWin() reopens it once
+    // the last card lands).
+    if (gameState === 'gaveup') showGameOver('gaveup');
+    else if (gameState === 'won' && cardsRemaining() === 0) showGameOver('won');
+    else render();
+    return true;
   }
 
   // ---- interaction ----
@@ -1057,6 +1091,6 @@
     }
   });
 
-  newGame(1);
+  if (!loadGame()) newGame(1);
 })();
 </script>
