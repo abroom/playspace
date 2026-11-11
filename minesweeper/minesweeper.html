@@ -271,26 +271,6 @@
   @media (max-height: 480px) {
     #board[data-size="medium"] { --cell-size: 23px !important; }
   }
-
-  /* On non-mobile screens the Big board (30 cols) fills the play area's width
-     instead of sitting at a small fixed cell size — grid-template-columns is
-     set inline by JS on every render, so it takes !important to override. */
-  @media (min-width: 561px) and (min-height: 481px) {
-    /* container-type has to live on #board, not on .cell itself - an element
-       can't be its own container-query reference (cqw on the same element that
-       declares container-type resolves against the next ancestor container
-       instead, which here has none, so it fell back to a huge basis). Since
-       Big's 30 columns are always equal width, each cell is 1/30th of #board's
-       inline size, so scale the font-size math accordingly. */
-    #board[data-size="big"] {
-      width: 100%; container-type: inline-size;
-      grid-template-columns: repeat(30, minmax(0, 1fr)) !important;
-    }
-    #board[data-size="big"] .cell {
-      width: auto; height: auto; aspect-ratio: 1 / 1;
-      font-size: calc(100cqw / 30 * 0.5);
-    }
-  }
 </style>
 
 <div class="wrap">
@@ -483,10 +463,28 @@
     render();
   }
 
+  // On non-mobile screens every board grows to fill the play area: as wide as
+  // the page allows (.wrap's max-width) and no taller than the window, whichever
+  // runs out first. The per-size cellSize is the floor. Phones skip this - the
+  // media queries above size their cells with !important overrides.
+  const DESKTOP_MQ = window.matchMedia('(min-width: 561px) and (min-height: 481px)');
+  function fitCellSize() {
+    if (!DESKTOP_MQ.matches) return size.cellSize;
+    const wrapEl = document.querySelector('.board-wrap');
+    const chrome = 8 + 12;   // .board-wrap padding + .board padding, both sides
+    const bottomRoom = 24;   // breathing room under the board
+    const availW = wrapEl.clientWidth - chrome;
+    const top = wrapEl.getBoundingClientRect().top + window.scrollY;
+    const availH = window.innerHeight - top - chrome - bottomRoom;
+    const byW = (availW - (size.cols - 1)) / size.cols;   // 1px grid gap per column
+    const byH = (availH - (size.rows - 1)) / size.rows;
+    return Math.max(size.cellSize, Math.floor(Math.min(byW, byH)));
+  }
+
   function applyBoardSize() {
     const boardEl = document.getElementById('board');
     boardEl.dataset.size = currentSize;
-    boardEl.style.setProperty('--cell-size', size.cellSize + 'px');
+    boardEl.style.setProperty('--cell-size', fitCellSize() + 'px');
     boardEl.style.setProperty('--cols', size.cols);
   }
 
@@ -936,5 +934,6 @@
   });
 
   if (!loadGame()) newGame('small');
+  window.addEventListener('resize', () => { if (size) applyBoardSize(); });
 })();
 </script>

@@ -21,12 +21,12 @@ classic Beginner/Intermediate/Expert dimensions):
 | Medium | 16×16  | 40    |
 | Big    | 30×16  | 99    |
 
-Small and Medium use a fixed cell size. On non-mobile screens (`min-width:
-561px` and `min-height: 481px`), Big instead fills the width of the play area
-with fluid `1fr` grid columns and `aspect-ratio: 1/1` cells (via a
-container-query `cqw` font-size, so the numbers/flags scale with it) — at a
-fixed 22px per cell it looked lost on a wide desktop screen. Below that
-breakpoint it falls back to the fixed size and scrolls horizontally instead.
+On non-mobile screens (`min-width: 561px` and `min-height: 481px`), every
+size grows to fill the play area: `fitCellSize()` picks the largest cell that
+fits both the page width (`.wrap` is capped at 1800px) and the window height
+below the board's top edge, and re-runs on resize. Each size's `cellSize` in
+`SIZES` (30 / 26 / 22px) is the floor. Below that breakpoint the phone media
+queries size the cells instead.
 
 ## Interaction model
 
