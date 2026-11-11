@@ -1,6 +1,8 @@
 # Playspace
 
-A personal scratch space for small side projects and misc notes.
+Playspace is a collection of classic and casual browser games, built via
+agentic engineering, mainly for personal use. Play them at
+<https://abroom.github.io/playspace/>.
 
 ## Contents
 
@@ -14,7 +16,6 @@ A personal scratch space for small side projects and misc notes.
   See its own README for details.
 - **[`skyscraper-farm/`](skyscraper-farm/)** — a single-file browser puzzle
   game (tower/crate sorting). See its own README for details.
-- **`notes/`** — miscellaneous design notes.
 
 `index.html` is the landing page linking to all five, listed alphabetically.
 Its game list is keyboard-navigable: **↑/↓** or **W/S** move between cards
