@@ -488,10 +488,15 @@
     if (!DESKTOP_MQ.matches) return size.cellSize;
     const wrapEl = document.querySelector('.board-wrap');
     const chrome = 8 + 12;   // .board-wrap padding + .board padding, both sides
-    const bottomRoom = 24;   // breathing room under the board
     const availW = wrapEl.clientWidth - chrome;
-    const top = wrapEl.getBoundingClientRect().top + window.scrollY;
-    const availH = window.innerHeight - top - chrome - bottomRoom;
+    // Measure everything that sits under the board (legend, .wrap's bottom
+    // padding, body margin) rather than guessing, so the page never scrolls.
+    // Hidden win/lose banners take no space, so they don't count here.
+    const boardRect = wrapEl.getBoundingClientRect();
+    const pageBottom = document.querySelector('.wrap').getBoundingClientRect().bottom
+      + parseFloat(getComputedStyle(document.body).marginBottom);
+    const below = pageBottom - boardRect.bottom;
+    const availH = window.innerHeight - (boardRect.top + window.scrollY) - below - chrome - 1;
     const byW = (availW - (size.cols - 1)) / size.cols;   // 1px grid gap per column
     const byH = (availH - (size.rows - 1)) / size.rows;
     return Math.max(size.cellSize, Math.floor(Math.min(byW, byH)));
