@@ -463,6 +463,22 @@
     render();
   }
 
+  // Big is played on its side (16 wide x 30 tall) on portrait phones. That was
+  // only decided when a game started, so a game begun in a narrow window stayed
+  // sideways forever after - including when restored from storage on desktop.
+  // Transposing keeps the game intact: cells carry no coordinates and neighbor
+  // counts are unchanged by a transpose. Returns true if it flipped.
+  const NARROW_MQ = window.matchMedia('(max-width: 560px)');
+  function orientBoard() {
+    if (currentSize !== 'big' || !grid) return false;
+    const wantTall = NARROW_MQ.matches;
+    if (wantTall === (size.rows > size.cols)) return false;
+    grid = grid[0].map((_, c) => grid.map(row => row[c]));
+    size = { ...size, rows: size.cols, cols: size.rows };
+    cursor = { r: cursor.c, c: cursor.r };
+    return true;
+  }
+
   // On non-mobile screens every board grows to fill the play area: as wide as
   // the page allows (.wrap's max-width) and no taller than the window, whichever
   // runs out first. The per-size cellSize is the floor. Phones skip this - the
@@ -508,6 +524,7 @@
     ({ currentSize, size, grid, gameState, minesPlaced, flagsPlaced, revealedCount,
        hintsUsed, continuesUsed, boardRevealed, timerSeconds, paused, cursor } = saved);
     pausedByMenu = false;
+    orientBoard();
     applyBoardSize();
     updateTimerDisplay();
     updateMineCounter();
@@ -934,6 +951,11 @@
   });
 
   if (!loadGame()) newGame('small');
-  window.addEventListener('resize', () => { if (size) applyBoardSize(); });
+  window.addEventListener('resize', () => {
+    if (!size) return;
+    const flipped = orientBoard();
+    applyBoardSize();
+    if (flipped) render();
+  });
 })();
 </script>
