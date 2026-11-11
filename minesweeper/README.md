@@ -21,12 +21,13 @@ classic Beginner/Intermediate/Expert dimensions):
 | Medium | 16×16  | 40    |
 | Big    | 30×16  | 99    |
 
-On non-mobile screens (`min-width: 561px` and `min-height: 481px`), every
-size grows to fill the play area: `fitCellSize()` picks the largest cell that
-fits both the page width (`.wrap` is capped at 1800px) and the window height
-below the board's top edge, and re-runs on resize. Each size's `cellSize` in
-`SIZES` (30 / 26 / 22px) is the floor. Below that breakpoint the phone media
-queries size the cells instead.
+Every size grows to fill the play area: `fitCellSize()` picks the largest
+cell that fits both the page width (`.wrap` is capped at 1800px) and the
+window height left below the board (measuring the legend and padding under
+it, so the page doesn't scroll), and re-runs on resize. On portrait phones
+(`max-width: 560px`) it fits width only and lets the page scroll down - Big is
+also turned on its side there (16 wide × 30 tall). Cells never go below 16px
+(`MIN_CELL`) so they stay tappable.
 
 ## Interaction model
 

@@ -143,6 +143,7 @@
   }
   .board {
     display: grid; gap: 1px; width: max-content; margin: 0 auto;
+    grid-template-columns: repeat(var(--cols), var(--cell-size));
     background: var(--border); padding: 6px; border-radius: 4px;
     box-shadow: inset 2px 2px 0 var(--bevel-light), inset -2px -2px 0 var(--bevel-dark);
   }
@@ -254,22 +255,6 @@
       font-size: 15px; letter-spacing: 0.5px; padding: 3px 4px; min-width: 2.4ch;
     }
     .face-btn, .hint-btn, .pause-btn { font-size: 14px; padding: 4px 6px; }
-
-    /* Shrink cells so the board fits the play area's width instead of
-       scrolling sideways. 12px is .board's horizontal padding, and the extra
-       1px per column is the grid gap. Floored at 16px so cells stay
-       tappable - Big's 30 columns still scroll a little at that size. */
-    .board-wrap { container-type: inline-size; }
-    #board {
-      --cell-size: clamp(16px, calc((100cqw - 12px) / var(--cols) - 1px), 30px) !important;
-    }
-  }
-
-  /* Landscape/short phones: Medium's 16 rows at full cell size run past the
-     bottom of the screen. The cell size is normally set inline via JS
-     (per-difficulty), so it takes !important to override here. */
-  @media (max-height: 480px) {
-    #board[data-size="medium"] { --cell-size: 23px !important; }
   }
 </style>
 
@@ -392,9 +377,9 @@
 <script>
 (function () {
   const SIZES = {
-    small:  { rows: 9,  cols: 9,  mines: 10, cellSize: 30, hintSquares: 1 },
-    medium: { rows: 16, cols: 16, mines: 40, cellSize: 26, hintSquares: 3 },
-    big:    { rows: 16, cols: 30, mines: 99, cellSize: 22, hintSquares: 5 },
+    small:  { rows: 9,  cols: 9,  mines: 10, hintSquares: 1 },
+    medium: { rows: 16, cols: 16, mines: 40, hintSquares: 3 },
+    big:    { rows: 16, cols: 30, mines: 99, hintSquares: 5 },
   };
 
   let size, grid, gameState, minesPlaced, flagsPlaced, revealedCount;
@@ -479,27 +464,28 @@
     return true;
   }
 
-  // On non-mobile screens every board grows to fill the play area: as wide as
-  // the page allows (.wrap's max-width) and no taller than the window, whichever
-  // runs out first. The per-size cellSize is the floor. Phones skip this - the
-  // media queries above size their cells with !important overrides.
-  const DESKTOP_MQ = window.matchMedia('(min-width: 561px) and (min-height: 481px)');
+  // Every board grows to fill the play area: the largest cell that fits the
+  // page width (.wrap's max-width) and the window height left for it, whichever
+  // runs out first. Portrait phones fit width only and scroll down - that's
+  // what Big's sideways layout is for. MIN_CELL keeps cells tappable.
+  const MIN_CELL = 16;
   function fitCellSize() {
-    if (!DESKTOP_MQ.matches) return size.cellSize;
     const wrapEl = document.querySelector('.board-wrap');
     const chrome = 8 + 12;   // .board-wrap padding + .board padding, both sides
-    const availW = wrapEl.clientWidth - chrome;
-    // Measure everything that sits under the board (legend, .wrap's bottom
-    // padding, body margin) rather than guessing, so the page never scrolls.
-    // Hidden win/lose banners take no space, so they don't count here.
-    const boardRect = wrapEl.getBoundingClientRect();
-    const pageBottom = document.querySelector('.wrap').getBoundingClientRect().bottom
-      + parseFloat(getComputedStyle(document.body).marginBottom);
-    const below = pageBottom - boardRect.bottom;
-    const availH = window.innerHeight - (boardRect.top + window.scrollY) - below - chrome - 1;
-    const byW = (availW - (size.cols - 1)) / size.cols;   // 1px grid gap per column
-    const byH = (availH - (size.rows - 1)) / size.rows;
-    return Math.max(size.cellSize, Math.floor(Math.min(byW, byH)));
+    const byW = (wrapEl.clientWidth - chrome - (size.cols - 1)) / size.cols;   // 1px grid gap per column
+    let fit = byW;
+    if (!NARROW_MQ.matches) {
+      // Measure everything that sits under the board (legend, .wrap's bottom
+      // padding, body margin) rather than guessing, so the page never scrolls.
+      // Hidden win/lose banners take no space, so they don't count here.
+      const boardRect = wrapEl.getBoundingClientRect();
+      const pageBottom = document.querySelector('.wrap').getBoundingClientRect().bottom
+        + parseFloat(getComputedStyle(document.body).marginBottom);
+      const availH = window.innerHeight - (boardRect.top + window.scrollY)
+        - (pageBottom - boardRect.bottom) - chrome - 1;
+      fit = Math.min(byW, (availH - (size.rows - 1)) / size.rows);
+    }
+    return Math.max(MIN_CELL, Math.floor(fit));
   }
 
   function applyBoardSize() {
@@ -800,7 +786,6 @@
 
   function render() {
     const board = document.getElementById('board');
-    board.style.gridTemplateColumns = `repeat(${size.cols}, var(--cell-size))`;
     board.innerHTML = '';
     for (let r = 0; r < size.rows; r++) {
       for (let c = 0; c < size.cols; c++) {
